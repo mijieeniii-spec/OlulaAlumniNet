@@ -180,7 +180,7 @@ export default function HomePage() {
           <div className="bg-white border border-[#E5E7EB] rounded-2xl p-8 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-[#0E172B]">Дэлхий даяарх Олула</h2>
+                <h2 className="text-xl font-bold text-[#0E172B]">Олула дэлхий даяар</h2>
                 <p className="text-[#647588] text-sm mt-1">Манай төгсөгчид хаана сурч байна</p>
               </div>
               <Link href="/achievements" className="text-[#32B4C5] text-sm hover:text-[#20AFCB] flex items-center gap-1">

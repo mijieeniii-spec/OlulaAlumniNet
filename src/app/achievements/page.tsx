@@ -314,7 +314,7 @@ export default function AchievementsPage() {
             Амжилт
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">
-            Дэлхий даяарх <span className="text-[#32B4C5]">Олула</span>
+            Олула <span className="text-[#32B4C5]">дэлхий даяар</span>
           </h1>
           <p className="text-gray-300 max-w-xl mx-auto">
             Манай төгсөгчид дэлхийн {countries.length} улсад суралцаж, амьдарч байна
