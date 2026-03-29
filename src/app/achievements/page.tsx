@@ -13,31 +13,82 @@ function WorldMap({ countries }: { countries: typeof countryData }) {
     return { x, y };
   }
 
+  const landFill = "#2d4a7a";
+  const landStroke = "#3d5a8a";
+
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl bg-[#1C274C] border border-[#1C274C]">
-      <svg
-        viewBox="0 0 800 400"
-        className="w-full h-auto"
-        style={{ minHeight: "280px" }}
-      >
-        {/* Ocean background */}
-        <rect width="800" height="400" fill="#1C274C" />
+    <div className="relative w-full overflow-hidden rounded-2xl border border-[#2a3a5c]">
+      <svg viewBox="0 0 800 400" className="w-full h-auto" style={{ minHeight: "300px" }}>
+        <defs>
+          <linearGradient id="oceanGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#0d1f3c" />
+            <stop offset="100%" stopColor="#152540" />
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="pinGlow">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
 
-        {/* Grid lines */}
-        {[...Array(9)].map((_, i) => (
-          <line key={`h${i}`} x1="0" y1={(i + 1) * 40} x2="800" y2={(i + 1) * 40} stroke="#2a3a5c" strokeWidth="0.5" opacity="0.5" />
-        ))}
-        {[...Array(16)].map((_, i) => (
-          <line key={`v${i}`} x1={(i + 1) * 50} y1="0" x2={(i + 1) * 50} y2="400" stroke="#2a3a5c" strokeWidth="0.5" opacity="0.5" />
-        ))}
+        {/* Ocean */}
+        <rect width="800" height="400" fill="url(#oceanGrad)" />
 
-        {/* Simplified continent shapes */}
-        <path d="M 100 80 L 200 70 L 220 100 L 200 180 L 170 220 L 140 200 L 100 160 L 80 120 Z" fill="#2a3a5c" stroke="#3a4a6c" strokeWidth="1" opacity="0.8" />
-        <path d="M 170 240 L 210 230 L 230 300 L 210 370 L 180 380 L 160 340 L 150 280 Z" fill="#2a3a5c" stroke="#3a4a6c" strokeWidth="1" opacity="0.8" />
-        <path d="M 370 60 L 440 55 L 450 100 L 420 130 L 380 120 L 360 90 Z" fill="#2a3a5c" stroke="#3a4a6c" strokeWidth="1" opacity="0.8" />
-        <path d="M 380 140 L 440 130 L 470 180 L 460 280 L 420 320 L 380 300 L 360 240 L 360 180 Z" fill="#2a3a5c" stroke="#3a4a6c" strokeWidth="1" opacity="0.8" />
-        <path d="M 440 50 L 660 60 L 680 120 L 660 160 L 580 180 L 520 200 L 460 180 L 440 140 L 430 90 Z" fill="#2a3a5c" stroke="#3a4a6c" strokeWidth="1" opacity="0.8" />
-        <path d="M 600 260 L 680 250 L 700 290 L 680 330 L 630 340 L 590 310 L 580 280 Z" fill="#2a3a5c" stroke="#3a4a6c" strokeWidth="1" opacity="0.8" />
+        {/* Graticule */}
+        {[-60,-30,0,30,60].map(lat => {
+          const y = ((90 - lat) / 180) * 400;
+          return <line key={lat} x1="0" y1={y} x2="800" y2={y} stroke="#1e3058" strokeWidth="0.6" strokeDasharray="4,6" />;
+        })}
+        {[-120,-60,0,60,120].map(lng => {
+          const x = ((lng + 180) / 360) * 800;
+          return <line key={lng} x1={x} y1="0" x2={x} y2="400" stroke="#1e3058" strokeWidth="0.6" strokeDasharray="4,6" />;
+        })}
+
+        {/* North America */}
+        <path d="M 88 76 C 102 64 138 56 176 57 C 212 57 250 63 270 77 C 284 88 287 103 280 118 C 272 132 260 144 248 155 C 236 165 224 174 212 182 C 200 190 190 197 180 204 C 170 211 160 215 150 213 C 141 207 136 196 128 186 C 118 175 107 163 99 151 C 90 137 83 121 80 105 C 78 90 82 80 88 76 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* Mexico & Central America */}
+        <path d="M 210 182 C 205 188 200 194 196 200 C 192 206 190 212 186 216 C 182 220 178 222 176 218 C 174 214 174 208 177 203 C 180 198 185 194 190 190 C 195 186 202 183 210 182 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* Greenland */}
+        <path d="M 322 42 C 336 36 354 38 362 48 C 370 58 367 72 356 79 C 345 85 330 82 322 72 C 315 63 316 50 322 42 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+
+        {/* South America */}
+        <path d="M 188 200 C 204 192 226 191 247 197 C 265 203 280 215 288 230 C 296 245 299 263 298 280 C 297 298 292 315 284 329 C 276 343 264 354 250 359 C 237 362 225 357 217 347 C 209 335 207 318 205 302 C 202 284 199 266 197 248 C 194 230 190 215 188 200 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+
+        {/* Europe main */}
+        <path d="M 373 125 C 381 114 394 107 406 106 C 420 105 436 109 448 116 C 460 123 468 134 468 145 C 468 154 462 160 452 163 C 442 165 430 163 420 159 C 413 163 406 161 398 158 C 389 155 381 151 375 145 C 370 138 370 131 373 125 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* Scandinavia */}
+        <path d="M 408 68 C 416 62 428 63 436 70 C 443 77 444 88 439 96 C 434 103 424 106 416 103 C 408 99 404 90 405 81 C 406 74 407 70 408 68 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* UK */}
+        <path d="M 381 101 C 387 95 396 95 400 102 C 404 109 401 118 395 121 C 389 123 382 119 380 112 C 379 107 380 104 381 101 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* Italy */}
+        <path d="M 428 133 C 432 138 436 147 436 158 C 436 165 432 170 428 168 C 424 164 422 155 422 145 C 422 137 425 131 428 133 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+
+        {/* Africa */}
+        <path d="M 372 122 C 390 117 414 118 432 123 C 450 128 464 140 470 156 C 476 173 476 193 472 212 C 468 230 461 247 452 261 C 443 275 432 284 419 288 C 406 291 393 285 383 274 C 373 262 367 246 367 228 C 367 210 370 192 371 174 C 372 156 372 138 372 122 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* Madagascar */}
+        <path d="M 490 230 C 494 224 500 225 503 232 C 506 240 503 251 498 255 C 493 257 489 250 489 242 C 488 236 489 232 490 230 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+
+        {/* Arabian Peninsula */}
+        <path d="M 468 135 C 480 129 496 130 508 140 C 518 149 521 162 516 174 C 511 184 500 188 489 185 C 478 181 470 170 468 157 C 466 147 467 139 468 135 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+
+        {/* Asia main body (Russia, China, Central Asia) */}
+        <path d="M 460 90 C 490 78 532 70 572 67 C 612 64 652 69 688 78 C 718 86 736 100 734 115 C 732 128 718 135 702 135 C 686 134 670 128 656 132 C 645 136 636 144 624 148 C 612 151 600 149 588 148 C 576 147 565 146 554 143 C 542 140 531 138 520 141 C 510 144 501 150 491 149 C 480 147 470 142 462 137 C 455 131 454 120 456 108 C 457 99 459 93 460 90 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* Indian subcontinent */}
+        <path d="M 527 133 C 542 128 560 131 571 142 C 580 153 582 167 578 181 C 573 194 562 202 549 203 C 536 202 526 193 521 179 C 516 165 518 149 527 133 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* Southeast Asia */}
+        <path d="M 618 144 C 630 140 644 143 654 152 C 663 161 664 173 657 181 C 650 187 638 188 628 183 C 618 177 613 165 615 154 C 616 149 617 146 618 144 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* Japan */}
+        <path d="M 692 103 C 699 97 709 100 714 108 C 718 116 715 126 707 130 C 699 132 692 127 690 119 C 688 112 690 107 692 103 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* Korean Peninsula */}
+        <path d="M 680 118 C 685 113 692 115 694 121 C 696 128 693 135 688 137 C 683 138 678 133 678 127 C 677 123 678 120 680 118 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+
+        {/* Australia */}
+        <path d="M 630 222 C 650 215 675 216 694 224 C 712 232 724 247 726 264 C 728 281 720 298 708 308 C 696 317 680 320 664 317 C 648 313 635 303 628 289 C 621 274 621 258 626 244 C 628 234 629 226 630 222 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
+        {/* New Zealand */}
+        <path d="M 734 285 C 738 279 745 280 748 287 C 751 295 747 304 742 306 C 737 307 733 300 733 292 C 733 289 733 287 734 285 Z" fill={landFill} stroke={landStroke} strokeWidth="0.8" />
 
         {/* Country pins */}
         {countries.map((c) => {
@@ -51,21 +102,20 @@ function WorldMap({ countries }: { countries: typeof countryData }) {
               onMouseLeave={() => setHoveredCountry(null)}
               style={{ cursor: "pointer" }}
             >
-              <circle
-                r={isHovered ? "14" : "10"}
-                fill="#32B4C5"
-                opacity={isHovered ? "0.3" : "0.2"}
-                className="transition-all duration-300"
-              />
-              <circle r="6" fill={isHovered ? "#5AC0A9" : "#32B4C5"} className="transition-colors duration-300" />
-              <text y="-12" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
-                {c.flag}
-              </text>
+              {/* Outer pulse ring */}
+              <circle r={isHovered ? "16" : "12"} fill="#32B4C5" opacity="0.15" className="transition-all duration-300" />
+              <circle r={isHovered ? "10" : "7"} fill="#32B4C5" opacity="0.3" className="transition-all duration-300" />
+              {/* Core dot */}
+              <circle r="4" fill={isHovered ? "#ffffff" : "#32B4C5"} filter="url(#pinGlow)" className="transition-all duration-300" />
+              {/* Flag emoji */}
+              <text y="-14" textAnchor="middle" fontSize="11" style={{ userSelect: "none" }}>{c.flag}</text>
+
+              {/* Tooltip */}
               {isHovered && (
                 <g>
-                  <rect x="-40" y="-55" width="80" height="36" rx="6" fill="#1C274C" stroke="#32B4C5" strokeWidth="1" />
-                  <text y="-40" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold">{c.country}</text>
-                  <text y="-26" textAnchor="middle" fill="#32B4C5" fontSize="10" fontWeight="bold">{c.count} оюутан</text>
+                  <rect x="-42" y="-60" width="84" height="40" rx="7" fill="#0d1f3c" stroke="#32B4C5" strokeWidth="1.5" filter="url(#glow)" />
+                  <text y="-44" textAnchor="middle" fill="white" fontSize="9" fontWeight="600">{c.country}</text>
+                  <text y="-29" textAnchor="middle" fill="#5AC0A9" fontSize="10" fontWeight="700">{c.count} оюутан</text>
                 </g>
               )}
             </g>
@@ -73,8 +123,8 @@ function WorldMap({ countries }: { countries: typeof countryData }) {
         })}
       </svg>
 
-      <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/40 rounded-lg px-3 py-2">
-        <div className="w-3 h-3 rounded-full bg-[#32B4C5]" />
+      <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5">
+        <div className="w-2.5 h-2.5 rounded-full bg-[#32B4C5]" />
         <span className="text-gray-300 text-xs">Олулачид суралцаж буй улс</span>
       </div>
     </div>
