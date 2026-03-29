@@ -5,7 +5,7 @@ import { countryData, qaData, QAPost } from "@/data/blog";
 import { worldPaths } from "@/data/worldmap";
 import { useAuth } from "@/context/AuthContext";
 
-function WorldMap({ countries }: { countries: typeof countryData }) {
+function WorldMap({ countries, highlightedCountry }: { countries: typeof countryData; highlightedCountry: string | null }) {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
 
   function toSVG(lat: number, lng: number) {
@@ -33,6 +33,10 @@ function WorldMap({ countries }: { countries: typeof countryData }) {
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
+          <filter id="strongGlow">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
         </defs>
 
         {/* Ocean */}
@@ -57,6 +61,8 @@ function WorldMap({ countries }: { countries: typeof countryData }) {
         {countries.map((c) => {
           const pos = toSVG(c.lat, c.lng);
           const isHovered = hoveredCountry === c.country;
+          const isHighlighted = highlightedCountry === c.country;
+
           return (
             <g
               key={c.country}
@@ -65,20 +71,52 @@ function WorldMap({ countries }: { countries: typeof countryData }) {
               onMouseLeave={() => setHoveredCountry(null)}
               style={{ cursor: "pointer" }}
             >
-              {/* Outer pulse ring */}
-              <circle r={isHovered ? "16" : "12"} fill="#32B4C5" opacity="0.15" className="transition-all duration-300" />
-              <circle r={isHovered ? "10" : "7"} fill="#32B4C5" opacity="0.3" className="transition-all duration-300" />
-              {/* Core dot */}
-              <circle r="4" fill={isHovered ? "#ffffff" : "#32B4C5"} filter="url(#pinGlow)" className="transition-all duration-300" />
-              {/* Flag emoji */}
-              <text y="-14" textAnchor="middle" fontSize="11" style={{ userSelect: "none" }}>{c.flag}</text>
+              {/* Highlight pulse rings (card click) */}
+              {isHighlighted && (<>
+                <circle r="8" fill="none" stroke="#ffffff" strokeWidth="2">
+                  <animate attributeName="r" from="8" to="40" dur="1.2s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" from="0.9" to="0" dur="1.2s" repeatCount="indefinite" />
+                </circle>
+                <circle r="8" fill="none" stroke="#5AC0A9" strokeWidth="1.5">
+                  <animate attributeName="r" from="8" to="28" dur="1.2s" begin="0.3s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" from="0.7" to="0" dur="1.2s" begin="0.3s" repeatCount="indefinite" />
+                </circle>
+              </>)}
 
-              {/* Tooltip */}
-              {isHovered && (
+              {/* Outer ring */}
+              <circle
+                r={isHighlighted ? "14" : isHovered ? "16" : "10"}
+                fill={isHighlighted ? "#ffffff" : "#32B4C5"}
+                opacity={isHighlighted ? "0.25" : "0.15"}
+                className="transition-all duration-300"
+              />
+              <circle
+                r={isHighlighted ? "9" : isHovered ? "10" : "6"}
+                fill={isHighlighted ? "#ffffff" : "#32B4C5"}
+                opacity={isHighlighted ? "0.5" : "0.3"}
+                className="transition-all duration-300"
+              />
+              {/* Core dot */}
+              <circle
+                r={isHighlighted ? "5" : "4"}
+                fill={isHighlighted ? "#ffffff" : isHovered ? "#ffffff" : "#32B4C5"}
+                filter={isHighlighted ? "url(#strongGlow)" : "url(#pinGlow)"}
+                className="transition-all duration-300"
+              />
+              {/* Flag emoji */}
+              <text y="-14" textAnchor="middle" fontSize={isHighlighted ? "14" : "11"} style={{ userSelect: "none" }}>{c.flag}</text>
+
+              {/* Tooltip (hover or highlighted) */}
+              {(isHovered || isHighlighted) && (
                 <g>
-                  <rect x="-42" y="-60" width="84" height="40" rx="7" fill="#0d1f3c" stroke="#32B4C5" strokeWidth="1.5" filter="url(#glow)" />
+                  <rect x="-42" y="-60" width="84" height="40" rx="7"
+                    fill="#0d1f3c"
+                    stroke={isHighlighted ? "#ffffff" : "#32B4C5"}
+                    strokeWidth={isHighlighted ? "2" : "1.5"}
+                    filter="url(#glow)"
+                  />
                   <text y="-44" textAnchor="middle" fill="white" fontSize="9" fontWeight="600">{c.country}</text>
-                  <text y="-29" textAnchor="middle" fill="#5AC0A9" fontSize="10" fontWeight="700">{c.count} оюутан</text>
+                  <text y="-29" textAnchor="middle" fill={isHighlighted ? "#ffffff" : "#5AC0A9"} fontSize="10" fontWeight="700">{c.count} оюутан</text>
                 </g>
               )}
             </g>
@@ -305,9 +343,15 @@ export default function AchievementsPage() {
   const { user, isAuthenticated } = useAuth();
   const [countries, setCountries] = useState(countryData);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [highlightedCountry, setHighlightedCountry] = useState<string | null>(null);
 
   const canAddPin = isAuthenticated && (user?.role === "alumni" || user?.role === "teacher");
   const totalAbroad = countries.filter((c) => c.country !== "Монгол").reduce((s, c) => s + c.count, 0);
+
+  const handleCardClick = (countryName: string) => {
+    setHighlightedCountry(countryName);
+    setTimeout(() => setHighlightedCountry(null), 2500);
+  };
 
   const addCountry = (countryName: string, flag: string) => {
     const existing = countries.find((c) => c.country === countryName);
@@ -369,22 +413,33 @@ export default function AchievementsPage() {
               </button>
             )}
           </div>
-          <WorldMap countries={countries} />
+          <WorldMap countries={countries} highlightedCountry={highlightedCountry} />
         </div>
 
         {/* Country list */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8">
-          {countries.map((c) => (
-            <div key={c.country} className="bg-white border border-[#E5E7EB] rounded-xl p-4 text-center hover:border-[#32B4C5]/40 hover:shadow-sm transition-all group">
-              <div className="text-3xl mb-2">{c.flag}</div>
-              <div className="text-[#0E172B] font-semibold text-sm">{c.country}</div>
-              <div className="flex items-center justify-center gap-1 mt-1">
-                <MapPin className="w-3 h-3 text-[#32B4C5]" />
-                <span className="text-[#32B4C5] text-sm font-bold">{c.count}</span>
-                <span className="text-gray-400 text-xs">оюутан</span>
-              </div>
-            </div>
-          ))}
+          {countries.map((c) => {
+            const isActive = highlightedCountry === c.country;
+            return (
+              <button
+                key={c.country}
+                onClick={() => handleCardClick(c.country)}
+                className={`rounded-xl p-4 text-center transition-all group border ${
+                  isActive
+                    ? "bg-[#1C274C] border-[#32B4C5] shadow-lg shadow-[#32B4C5]/20 scale-105"
+                    : "bg-white border-[#E5E7EB] hover:border-[#32B4C5]/40 hover:shadow-sm"
+                }`}
+              >
+                <div className="text-3xl mb-2">{c.flag}</div>
+                <div className={`font-semibold text-sm ${isActive ? "text-white" : "text-[#0E172B]"}`}>{c.country}</div>
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <MapPin className={`w-3 h-3 ${isActive ? "text-[#5AC0A9]" : "text-[#32B4C5]"}`} />
+                  <span className={`text-sm font-bold ${isActive ? "text-[#5AC0A9]" : "text-[#32B4C5]"}`}>{c.count}</span>
+                  <span className={`text-xs ${isActive ? "text-gray-300" : "text-gray-400"}`}>оюутан</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* QA Section */}
