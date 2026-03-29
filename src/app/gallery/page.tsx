@@ -30,10 +30,10 @@ function ImageModal({ image, onClose }: { image: GalleryImage; onClose: () => vo
           alt={image.event}
           className="w-full rounded-2xl shadow-2xl"
         />
-        <div className="mt-4 bg-[#0d2847] border border-[#1a3a6b] rounded-xl p-4">
-          <h3 className="text-white font-semibold mb-1">{image.event}</h3>
-          <p className="text-gray-400 text-sm mb-2">{image.description}</p>
-          <div className="flex items-center gap-4 text-xs text-gray-500">
+        <div className="mt-4 bg-white border border-[#E5E7EB] rounded-xl p-4">
+          <h3 className="text-[#0E172B] font-semibold mb-1">{image.event}</h3>
+          <p className="text-[#647588] text-sm mb-2">{image.description}</p>
+          <div className="flex items-center gap-4 text-xs text-gray-400">
             <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{image.date}</span>
             <span className="flex items-center gap-1"><Camera className="w-3 h-3" />{image.photographer}</span>
           </div>
@@ -54,17 +54,17 @@ export default function GalleryPage() {
   const filteredImages = selectedEvent ? grouped[selectedEvent] : currentData;
 
   return (
-    <main className="min-h-screen bg-[#060f1e] pt-16">
+    <main className="min-h-screen bg-[#F3F5F6] pt-16">
       {/* Hero */}
-      <div className="bg-gradient-to-b from-[#0a1e3d] to-[#060f1e] py-16 px-4">
+      <div className="bg-[#1C274C] py-16 px-4">
         <div className="max-w-5xl mx-auto text-center">
-          <span className="inline-block bg-pink-500/10 border border-pink-500/30 text-pink-400 text-xs px-4 py-1.5 rounded-full mb-4">
+          <span className="inline-block bg-[#32B4C5]/10 border border-[#32B4C5]/30 text-[#5AC0A9] text-xs px-4 py-1.5 rounded-full mb-4">
             Галерей
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">
-            Сургуулийн <span className="text-pink-400">Галерей</span>
+            Сургуулийн <span className="text-[#32B4C5]">Галерей</span>
           </h1>
-          <p className="text-gray-400 max-w-xl mx-auto">
+          <p className="text-gray-300 max-w-xl mx-auto">
             Сургуулийн үйл ажиллагаа, арга хэмжээний дурсамжит зургууд
           </p>
         </div>
@@ -79,8 +79,8 @@ export default function GalleryPage() {
               onClick={() => { setSelectedYear(y.year); setSelectedEvent(null); }}
               className={`px-6 py-3 rounded-xl font-semibold transition-all text-sm ${
                 selectedYear === y.year
-                  ? "bg-pink-600 text-white shadow-lg shadow-pink-500/30"
-                  : "bg-[#0d2847] border border-[#1a3a6b] text-gray-300 hover:border-pink-500/30"
+                  ? "bg-[#32B4C5] text-white shadow-lg shadow-[#32B4C5]/30"
+                  : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40 hover:text-[#32B4C5]"
               }`}
             >
               {y.year} он
@@ -94,7 +94,7 @@ export default function GalleryPage() {
           <button
             onClick={() => setSelectedEvent(null)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              !selectedEvent ? "bg-pink-500/20 text-pink-400 border border-pink-500/40" : "bg-[#0d2847] border border-[#1a3a6b] text-gray-400 hover:border-pink-500/30"
+              !selectedEvent ? "bg-[#32B4C5] text-white" : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40"
             }`}
           >
             Бүгд ({currentData.length})
@@ -104,7 +104,7 @@ export default function GalleryPage() {
               key={ev}
               onClick={() => setSelectedEvent(selectedEvent === ev ? null : ev)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                selectedEvent === ev ? "bg-pink-500/20 text-pink-400 border border-pink-500/40" : "bg-[#0d2847] border border-[#1a3a6b] text-gray-400 hover:border-pink-500/30"
+                selectedEvent === ev ? "bg-[#32B4C5] text-white" : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40"
               }`}
             >
               {ev} ({grouped[ev].length})
@@ -118,7 +118,7 @@ export default function GalleryPage() {
             <div
               key={img.id}
               onClick={() => setSelectedImage(img)}
-              className="group relative cursor-pointer rounded-xl overflow-hidden aspect-square bg-[#0d2847] border border-[#1a3a6b] hover:border-pink-500/40 transition-all"
+              className="group relative cursor-pointer rounded-xl overflow-hidden aspect-square bg-[#E5E7EB] border border-[#E5E7EB] hover:border-[#32B4C5]/40 hover:shadow-md transition-all"
             >
               <img
                 src={img.photo}
@@ -139,7 +139,7 @@ export default function GalleryPage() {
         </div>
 
         {filteredImages.length === 0 && (
-          <div className="text-center py-16 text-gray-500">
+          <div className="text-center py-16 text-gray-400">
             <Image className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p>Зураг олдсонгүй</p>
           </div>
