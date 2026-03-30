@@ -1,8 +1,19 @@
 "use client";
-import { useState } from "react";
-import { Plus, X, Calendar, Tag, Newspaper, BookOpen, Search, Upload } from "lucide-react";
-import { blogPosts, categories, BlogPost } from "@/data/blog";
+import { useState, useEffect } from "react";
+import { Plus, X, Calendar, Tag, Newspaper, BookOpen, Search, Upload, Trash2 } from "lucide-react";
+import { blogPosts, categories as staticCategories, BlogPost } from "@/data/blog";
 import { useAuth } from "@/context/AuthContext";
+
+/* ── localStorage helpers ── */
+const CUSTOM_CATS_KEY = "olula_blog_custom_categories";
+function ls<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; } catch { return fallback; }
+}
+function lsSet(key: string, val: unknown) { localStorage.setItem(key, JSON.stringify(val)); }
+function loadCustomCats(): string[] { return ls(CUSTOM_CATS_KEY, []); }
+function saveCustomCat(name: string) { const a = loadCustomCats(); if (!a.includes(name)) lsSet(CUSTOM_CATS_KEY, [...a, name]); }
+function deleteCustomCat(name: string) { lsSet(CUSTOM_CATS_KEY, loadCustomCats().filter((c) => c !== name)); }
 
 function BlogCard({ post, onClick }: { post: BlogPost; onClick: () => void }) {
   return (
@@ -99,11 +110,11 @@ function BlogModal({ post, onClose }: { post: BlogPost; onClose: () => void }) {
   );
 }
 
-function NewPostModal({ onClose, onAdd }: { onClose: () => void; onAdd: (post: BlogPost) => void }) {
+function NewPostModal({ onClose, onAdd, allCategories }: { onClose: () => void; onAdd: (post: BlogPost) => void; allCategories: string[] }) {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState(categories[0]);
+  const [category, setCategory] = useState(allCategories[0] ?? staticCategories[0]);
   const [imageUrl, setImageUrl] = useState("");
   const [tags, setTags] = useState("");
 
@@ -154,7 +165,7 @@ function NewPostModal({ onClose, onAdd }: { onClose: () => void; onAdd: (post: B
               onChange={(e) => setCategory(e.target.value)}
               className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-[#0E172B] text-sm focus:outline-none focus:border-[#32B4C5] transition-colors"
             >
-              {categories.map((c) => (
+              {allCategories.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -207,11 +218,34 @@ function NewPostModal({ onClose, onAdd }: { onClose: () => void; onAdd: (post: B
 
 export default function BlogPage() {
   const { user, isAuthenticated } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [posts, setPosts] = useState<BlogPost[]>(blogPosts);
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [customCats, setCustomCats] = useState<string[]>([]);
+  const [showCatInput, setShowCatInput] = useState(false);
+  const [newCatInput, setNewCatInput] = useState("");
+
+  useEffect(() => { setCustomCats(loadCustomCats()); }, []);
+
+  const allCategories = [...staticCategories, ...customCats];
+
+  const handleAddCat = () => {
+    const name = newCatInput.trim();
+    if (!name) return;
+    saveCustomCat(name);
+    setCustomCats(loadCustomCats());
+    setNewCatInput("");
+    setShowCatInput(false);
+  };
+
+  const handleDeleteCat = (name: string) => {
+    deleteCustomCat(name);
+    setCustomCats(loadCustomCats());
+    if (activeCategory === name) setActiveCategory(null);
+  };
 
   const canPost = isAuthenticated && (user?.role === "alumni" || user?.role === "teacher");
 
@@ -265,7 +299,7 @@ export default function BlogPage() {
         </div>
 
         {/* Category filter */}
-        <div className="flex gap-2 flex-wrap mb-8">
+        <div className="flex gap-2 flex-wrap mb-8 items-center">
           <button
             onClick={() => setActiveCategory(null)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
@@ -274,21 +308,71 @@ export default function BlogPage() {
           >
             Бүгд ({posts.length})
           </button>
-          {categories.map((cat) => {
+
+          {/* Static categories — show only if has posts */}
+          {staticCategories.map((cat) => {
             const count = posts.filter((p) => p.category === cat).length;
             if (count === 0) return null;
             return (
-              <button
-                key={cat}
+              <button key={cat}
                 onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                   activeCategory === cat ? "bg-[#32B4C5] text-white" : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40"
-                }`}
-              >
+                }`}>
                 {cat} ({count})
               </button>
             );
           })}
+
+          {/* Custom categories — always show, with delete button for admin */}
+          {customCats.map((cat) => {
+            const count = posts.filter((p) => p.category === cat).length;
+            return (
+              <div key={cat} className="relative group/cat flex items-center">
+                <button
+                  onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    activeCategory === cat ? "bg-[#32B4C5] text-white" : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40"
+                  } ${isAdmin ? "pr-6" : ""}`}>
+                  {cat} ({count})
+                </button>
+                {isAdmin && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteCat(cat); }}
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/cat:opacity-100 transition-opacity hover:bg-red-700"
+                    title="Устгах">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Admin: add new category */}
+          {isAdmin && (
+            showCatInput ? (
+              <div className="flex items-center gap-1">
+                <input autoFocus value={newCatInput}
+                  onChange={(e) => setNewCatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleAddCat(); if (e.key === "Escape") { setShowCatInput(false); setNewCatInput(""); } }}
+                  placeholder="Ангилалын нэр..."
+                  className="px-3 py-1.5 rounded-full text-xs border border-[#32B4C5] bg-white text-[#0E172B] focus:outline-none w-40" />
+                <button onClick={handleAddCat}
+                  className="w-6 h-6 rounded-full bg-[#32B4C5] text-white flex items-center justify-center hover:bg-[#2aa3b2] transition-colors">
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => { setShowCatInput(false); setNewCatInput(""); }}
+                  className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center hover:bg-gray-300 transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowCatInput(true)}
+                className="px-3 py-1.5 rounded-full text-xs font-medium border border-dashed border-[#32B4C5]/50 text-[#32B4C5] hover:bg-[#32B4C5]/5 transition-all flex items-center gap-1">
+                <Plus className="w-3 h-3" />Нэр нэмэх
+              </button>
+            )
+          )}
         </div>
 
         {/* Posts grid */}
@@ -320,7 +404,7 @@ export default function BlogPage() {
       </div>
 
       {selectedPost && <BlogModal post={selectedPost} onClose={() => setSelectedPost(null)} />}
-      {showNewModal && <NewPostModal onClose={() => setShowNewModal(false)} onAdd={addPost} />}
+      {showNewModal && <NewPostModal onClose={() => setShowNewModal(false)} onAdd={addPost} allCategories={allCategories} />}
     </main>
   );
 }
