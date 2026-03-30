@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 const OVERRIDES_KEY = "olula_gallery_overrides";
 const ADDITIONS_KEY = "olula_gallery_additions";
 const DELETED_KEY = "olula_gallery_deleted_ids";
+const CUSTOM_EVENTS_KEY = "olula_gallery_custom_events";
 
 function ls<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -24,7 +25,10 @@ function deleteAddition(id: number) { lsSet(ADDITIONS_KEY, loadAdditions().filte
 
 function loadDeleted(): number[] { return ls(DELETED_KEY, []); }
 function markDeleted(ids: number[]) { lsSet(DELETED_KEY, [...new Set([...loadDeleted(), ...ids])]); }
-function unmarkDeleted(id: number) { lsSet(DELETED_KEY, loadDeleted().filter((x) => x !== id)); }
+
+function loadCustomEvents(): string[] { return ls(CUSTOM_EVENTS_KEY, []); }
+function saveCustomEvent(name: string) { const a = loadCustomEvents(); if (!a.includes(name)) lsSet(CUSTOM_EVENTS_KEY, [...a, name]); }
+function deleteCustomEvent(name: string) { lsSet(CUSTOM_EVENTS_KEY, loadCustomEvents().filter((e) => e !== name)); }
 
 function mergeImages(base: GalleryImage[], overrides: Record<number, Partial<GalleryImage>>): GalleryImage[] {
   return base.map((img) => overrides[img.id] ? { ...img, ...overrides[img.id] } : img);
@@ -151,11 +155,15 @@ export default function GalleryPage() {
   const [overrides, setOverrides] = useState<Record<number, Partial<GalleryImage>>>({});
   const [additions, setAdditions] = useState<GalleryImage[]>([]);
   const [deleted, setDeleted] = useState<number[]>([]);
+  const [customEvents, setCustomEvents] = useState<string[]>([]);
+  const [newEventInput, setNewEventInput] = useState("");
+  const [showEventInput, setShowEventInput] = useState(false);
 
   useEffect(() => {
     setOverrides(loadOverrides());
     setAdditions(loadAdditions());
     setDeleted(loadDeleted());
+    setCustomEvents(loadCustomEvents());
   }, []);
 
   const getMergedData = (year: number): GalleryImage[] => {
@@ -200,6 +208,15 @@ export default function GalleryPage() {
     }
   };
 
+  const handleAddEvent = () => {
+    const name = newEventInput.trim();
+    if (!name) return;
+    saveCustomEvent(name);
+    setCustomEvents(loadCustomEvents());
+    setNewEventInput("");
+    setShowEventInput(false);
+  };
+
   const handleDeleteEvent = (eventName: string) => {
     const ids = (grouped[eventName] ?? []).map((img) => img.id);
     // Remove additions in this event
@@ -209,6 +226,8 @@ export default function GalleryPage() {
     if (staticIds.length) markDeleted(staticIds);
     setAdditions(loadAdditions());
     setDeleted(loadDeleted());
+    deleteCustomEvent(eventName);
+    setCustomEvents(loadCustomEvents());
     if (selectedEvent === eventName) setSelectedEvent(null);
   };
 
@@ -254,14 +273,16 @@ export default function GalleryPage() {
         </div>
 
         {/* Event filter */}
-        <div className="flex gap-2 flex-wrap justify-center mb-8">
+        <div className="flex gap-2 flex-wrap justify-center mb-8 items-center">
           <button onClick={() => setSelectedEvent(null)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               !selectedEvent ? "bg-[#32B4C5] text-white" : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40"
             }`}>
             Бүгд ({currentData.length})
           </button>
-          {eventNames.map((ev) => (
+
+          {/* All events: from images + custom */}
+          {[...new Set([...eventNames, ...customEvents])].map((ev) => (
             <div key={ev} className="relative group/ev flex items-center">
               <button onClick={() => setSelectedEvent(selectedEvent === ev ? null : ev)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
@@ -273,13 +294,42 @@ export default function GalleryPage() {
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeleteEvent(ev); }}
                   className="absolute right-0.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/ev:opacity-100 transition-opacity hover:bg-red-700"
-                  title="Арга хэмжээ устгах"
+                  title="Устгах"
                 >
                   <X className="w-2.5 h-2.5" />
                 </button>
               )}
             </div>
           ))}
+
+          {/* Admin: add new event name */}
+          {isAdmin && (
+            showEventInput ? (
+              <div className="flex items-center gap-1">
+                <input
+                  autoFocus
+                  value={newEventInput}
+                  onChange={(e) => setNewEventInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleAddEvent(); if (e.key === "Escape") { setShowEventInput(false); setNewEventInput(""); } }}
+                  placeholder="Арга хэмжээний нэр..."
+                  className="px-3 py-1.5 rounded-full text-xs border border-[#32B4C5] bg-white text-[#0E172B] focus:outline-none w-44"
+                />
+                <button onClick={handleAddEvent}
+                  className="w-6 h-6 rounded-full bg-[#32B4C5] text-white flex items-center justify-center hover:bg-[#2aa3b2] transition-colors">
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => { setShowEventInput(false); setNewEventInput(""); }}
+                  className="w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center hover:bg-gray-300 transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowEventInput(true)}
+                className="px-3 py-1.5 rounded-full text-xs font-medium border border-dashed border-[#32B4C5]/50 text-[#32B4C5] hover:bg-[#32B4C5]/5 transition-all flex items-center gap-1">
+                <Plus className="w-3 h-3" />Нэр нэмэх
+              </button>
+            )
+          )}
         </div>
 
         {/* Images grid */}
