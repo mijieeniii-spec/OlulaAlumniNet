@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 /* ── localStorage helpers ── */
 const OVERRIDES_KEY = "olula_gallery_overrides";
 const ADDITIONS_KEY = "olula_gallery_additions";
+const DELETED_KEY = "olula_gallery_deleted_ids";
 
 function ls<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -20,6 +21,10 @@ function saveOverride(id: number, data: Partial<GalleryImage>) { const a = loadO
 function loadAdditions(): GalleryImage[] { return ls(ADDITIONS_KEY, []); }
 function saveAddition(img: GalleryImage) { lsSet(ADDITIONS_KEY, [...loadAdditions(), img]); }
 function deleteAddition(id: number) { lsSet(ADDITIONS_KEY, loadAdditions().filter((x) => x.id !== id)); }
+
+function loadDeleted(): number[] { return ls(DELETED_KEY, []); }
+function markDeleted(ids: number[]) { lsSet(DELETED_KEY, [...new Set([...loadDeleted(), ...ids])]); }
+function unmarkDeleted(id: number) { lsSet(DELETED_KEY, loadDeleted().filter((x) => x !== id)); }
 
 function mergeImages(base: GalleryImage[], overrides: Record<number, Partial<GalleryImage>>): GalleryImage[] {
   return base.map((img) => overrides[img.id] ? { ...img, ...overrides[img.id] } : img);
@@ -145,10 +150,12 @@ export default function GalleryPage() {
   const [addingImage, setAddingImage] = useState(false);
   const [overrides, setOverrides] = useState<Record<number, Partial<GalleryImage>>>({});
   const [additions, setAdditions] = useState<GalleryImage[]>([]);
+  const [deleted, setDeleted] = useState<number[]>([]);
 
   useEffect(() => {
     setOverrides(loadOverrides());
     setAdditions(loadAdditions());
+    setDeleted(loadDeleted());
   }, []);
 
   const getMergedData = (year: number): GalleryImage[] => {
@@ -157,14 +164,13 @@ export default function GalleryPage() {
     const addedForYear = additions
       .filter((a) => a.year === year)
       .map((a) => overrides[a.id] ? { ...a, ...overrides[a.id] } : a);
-    return [...merged, ...addedForYear];
+    return [...merged, ...addedForYear].filter((img) => !deleted.includes(img.id));
   };
 
   const currentData = getMergedData(selectedYear);
   const grouped = groupByEvent(currentData);
   const eventNames = Object.keys(grouped);
   const filteredImages = selectedEvent ? (grouped[selectedEvent] ?? []) : currentData;
-  const isAddition = (id: number) => additions.some((a) => a.id === id);
 
   const handleSave = (id: number, data: Partial<GalleryImage>) => {
     saveOverride(id, data);
@@ -183,9 +189,27 @@ export default function GalleryPage() {
     if (img.year !== selectedYear) setSelectedYear(img.year as 2024 | 2025);
   };
 
-  const handleDelete = (id: number) => {
-    deleteAddition(id);
+  const handleDeleteImage = (id: number) => {
+    // If it's an addition, remove it entirely; if static, mark as deleted
+    if (additions.some((a) => a.id === id)) {
+      deleteAddition(id);
+      setAdditions(loadAdditions());
+    } else {
+      markDeleted([id]);
+      setDeleted(loadDeleted());
+    }
+  };
+
+  const handleDeleteEvent = (eventName: string) => {
+    const ids = (grouped[eventName] ?? []).map((img) => img.id);
+    // Remove additions in this event
+    ids.forEach((id) => { if (additions.some((a) => a.id === id)) deleteAddition(id); });
+    // Mark static ones as deleted
+    const staticIds = ids.filter((id) => !additions.some((a) => a.id === id));
+    if (staticIds.length) markDeleted(staticIds);
     setAdditions(loadAdditions());
+    setDeleted(loadDeleted());
+    if (selectedEvent === eventName) setSelectedEvent(null);
   };
 
   return (
@@ -238,12 +262,23 @@ export default function GalleryPage() {
             Бүгд ({currentData.length})
           </button>
           {eventNames.map((ev) => (
-            <button key={ev} onClick={() => setSelectedEvent(selectedEvent === ev ? null : ev)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                selectedEvent === ev ? "bg-[#32B4C5] text-white" : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40"
-              }`}>
-              {ev} ({grouped[ev]?.length ?? 0})
-            </button>
+            <div key={ev} className="relative group/ev flex items-center">
+              <button onClick={() => setSelectedEvent(selectedEvent === ev ? null : ev)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  selectedEvent === ev ? "bg-[#32B4C5] text-white" : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40"
+                } ${isAdmin ? "pr-6" : ""}`}>
+                {ev} ({grouped[ev]?.length ?? 0})
+              </button>
+              {isAdmin && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteEvent(ev); }}
+                  className="absolute right-0.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/ev:opacity-100 transition-opacity hover:bg-red-700"
+                  title="Арга хэмжээ устгах"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              )}
+            </div>
           ))}
         </div>
 
@@ -260,8 +295,8 @@ export default function GalleryPage() {
                   <p className="text-gray-300 text-xs mt-0.5">{img.date}</p>
                 </div>
               </div>
-              {isAdmin && isAddition(img.id) && (
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(img.id); }}
+              {isAdmin && (
+                <button onClick={(e) => { e.stopPropagation(); handleDeleteImage(img.id); }}
                   className="absolute top-2 left-2 w-6 h-6 bg-gray-800/70 hover:bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all z-10">
                   <Trash2 className="w-3 h-3" />
                 </button>
