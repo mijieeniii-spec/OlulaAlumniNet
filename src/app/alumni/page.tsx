@@ -29,6 +29,12 @@ function deleteAddition(year: number, id: number) { const a = loadAdditions(); a
 
 function loadCustomYears(): number[] { return ls(YEARS_KEY, []); }
 function saveCustomYear(year: number) { const a = loadCustomYears(); if (!a.includes(year)) lsSet(YEARS_KEY, [...a, year].sort()); }
+function deleteCustomYear(year: number) {
+  lsSet(YEARS_KEY, loadCustomYears().filter((y) => y !== year));
+  const adds = loadAdditions(); delete adds[year]; lsSet(ADDITIONS_KEY, adds);
+  const cta = loadCTAdditions(); delete cta[year]; lsSet(CT_ADDITIONS_KEY, cta);
+  const cto = loadCTOverrides(); delete cto[year]; lsSet(CT_OVERRIDES_KEY, cto);
+}
 
 function loadCTAdditions(): Record<number, ClassTeacher> { return ls(CT_ADDITIONS_KEY, {}); }
 function saveCTAddition(ct: ClassTeacher) { const a = loadCTAdditions(); a[ct.year] = ct; lsSet(CT_ADDITIONS_KEY, a); }
@@ -380,6 +386,15 @@ export default function AlumniPage() {
     setSelectedYear(year);
   };
 
+  const handleDeleteYear = (year: number) => {
+    deleteCustomYear(year);
+    setCustomYears(loadCustomYears());
+    setAdditions(loadAdditions());
+    setCtAdditions(loadCTAdditions());
+    setCtOverrides(loadCTOverrides());
+    if (selectedYear === year) setSelectedYear(2024);
+  };
+
   const isAddition = (id: number) => (additions[selectedYear] || []).some((a) => a.id === id);
 
   return (
@@ -404,17 +419,32 @@ export default function AlumniPage() {
 
         {/* Year selector + add buttons */}
         <div className="flex flex-wrap gap-3 justify-center mb-8 items-center">
-          {allYears.map((year) => (
-            <button key={year} onClick={() => setSelectedYear(year)}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all text-sm ${
-                selectedYear === year
-                  ? "bg-[#32B4C5] text-white shadow-lg shadow-[#32B4C5]/30"
-                  : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40 hover:text-[#32B4C5]"
-              }`}>
-              Class of {year}
-              <span className="ml-2 text-xs opacity-70">({getMergedData(year).length})</span>
-            </button>
-          ))}
+          {allYears.map((year) => {
+            const isCustom = customYears.includes(year);
+            const active = selectedYear === year;
+            return (
+              <div key={year} className="relative group/yr">
+                <button onClick={() => setSelectedYear(year)}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all text-sm ${
+                    active
+                      ? "bg-[#32B4C5] text-white shadow-lg shadow-[#32B4C5]/30"
+                      : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40 hover:text-[#32B4C5]"
+                  } ${isCustom && isAdmin ? "pr-8" : ""}`}>
+                  Class of {year}
+                  <span className="ml-2 text-xs opacity-70">({getMergedData(year).length})</span>
+                </button>
+                {isCustom && isAdmin && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteYear(year); }}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/yr:opacity-100 transition-opacity hover:bg-red-700"
+                    title="Анги устгах"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
           {isAdmin && (
             <button onClick={() => setAddingYear(true)}
               className="px-4 py-3 rounded-xl font-semibold transition-all text-sm bg-white border border-dashed border-[#32B4C5]/50 text-[#32B4C5] hover:bg-[#32B4C5]/5 flex items-center gap-1.5">
