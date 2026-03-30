@@ -33,11 +33,16 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#F3F5F6]">
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 bg-[#1C274C]">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#32B4C5]/5 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#5AC0A9]/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
-        </div>
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/school-hero.jpg')" }}
+        />
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-[#1C274C]/70 backdrop-blur-[2px]" />
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
 
         <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
           <div className="inline-flex items-center gap-2 bg-[#32B4C5]/10 border border-[#32B4C5]/30 rounded-full px-4 py-1.5 mb-6">

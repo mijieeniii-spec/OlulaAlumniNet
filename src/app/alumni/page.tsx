@@ -1,10 +1,22 @@
 "use client";
 import { useState, useEffect } from "react";
 import { X, Mail, AtSign, Calendar, MapPin, Award, BookOpen, GraduationCap, User, Pencil, Save } from "lucide-react";
-import { alumni2024, alumni2025, classTeachers, Alumni } from "@/data/alumni";
+import { alumni2024, alumni2025, classTeachers, Alumni, ClassTeacher } from "@/data/alumni";
 import { useAuth } from "@/context/AuthContext";
 
 const OVERRIDES_KEY = "olula_alumni_overrides";
+const CT_OVERRIDES_KEY = "olula_classteacher_overrides";
+
+function loadCTOverrides(): Record<number, Partial<ClassTeacher>> {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem(CT_OVERRIDES_KEY) || "{}"); } catch { return {}; }
+}
+
+function saveCTOverride(year: number, data: Partial<ClassTeacher>) {
+  const all = loadCTOverrides();
+  all[year] = { ...all[year], ...data };
+  localStorage.setItem(CT_OVERRIDES_KEY, JSON.stringify(all));
+}
 
 function loadOverrides(): Record<number, Partial<Alumni>> {
   if (typeof window === "undefined") return {};
@@ -25,6 +37,54 @@ const allClasses = [
   { year: 2024 as const, data: alumni2024 },
   { year: 2025 as const, data: alumni2025 },
 ];
+
+/* ── Class Teacher Edit Modal ── */
+function ClassTeacherEditModal({ teacher, onClose, onSave }: { teacher: ClassTeacher; onClose: () => void; onSave: (year: number, data: Partial<ClassTeacher>) => void }) {
+  const [form, setForm] = useState({
+    name: teacher.name,
+    photo: teacher.photo,
+    subject: teacher.subject,
+  });
+  const handle = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const submit = () => { onSave(teacher.year, form); onClose(); };
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md bg-white border border-[#E5E7EB] rounded-2xl shadow-2xl">
+        <div className="bg-white border-b border-[#E5E7EB] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <div className="flex items-center gap-2">
+            <Pencil className="w-4 h-4 text-red-500" />
+            <h2 className="text-[#0E172B] font-bold">Анги даасан багш засах</h2>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <img src={form.photo} alt="preview" className="w-16 h-16 rounded-xl object-cover border border-[#E5E7EB] bg-gray-100" />
+            <div className="flex-1">
+              <label className="block text-xs text-[#647588] mb-1">Зургийн URL</label>
+              <input value={form.photo} onChange={(e) => handle("photo", e.target.value)}
+                className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm text-[#0E172B] focus:outline-none focus:border-red-400" />
+            </div>
+          </div>
+          {[{ label: "Нэр", key: "name" }, { label: "Хичээл", key: "subject" }].map(({ label, key }) => (
+            <div key={key}>
+              <label className="block text-xs text-[#647588] mb-1">{label}</label>
+              <input value={form[key as keyof typeof form]} onChange={(e) => handle(key, e.target.value)}
+                className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm text-[#0E172B] focus:outline-none focus:border-red-400" />
+            </div>
+          ))}
+          <button onClick={submit}
+            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-semibold py-3 rounded-xl transition-all">
+            <Save className="w-4 h-4" />
+            Хадгалах
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── Edit Modal ── */
 function AlumniEditModal({ alumni, onClose, onSave }: { alumni: Alumni; onClose: () => void; onSave: (id: number, data: Partial<Alumni>) => void }) {
@@ -234,9 +294,12 @@ export default function AlumniPage() {
   const [selectedAlumni, setSelectedAlumni] = useState<Alumni | null>(null);
   const [editingAlumni, setEditingAlumni] = useState<Alumni | null>(null);
   const [overrides, setOverrides] = useState<Record<number, Partial<Alumni>>>({});
+  const [ctOverrides, setCtOverrides] = useState<Record<number, Partial<ClassTeacher>>>({});
+  const [editingCT, setEditingCT] = useState<ClassTeacher | null>(null);
 
   useEffect(() => {
     setOverrides(loadOverrides());
+    setCtOverrides(loadCTOverrides());
   }, []);
 
   const mergedClasses = allClasses.map((c) => ({
@@ -245,15 +308,20 @@ export default function AlumniPage() {
   }));
 
   const currentClass = mergedClasses.find((c) => c.year === selectedYear)!;
-  const classTeacher = classTeachers.find((t) => t.year === selectedYear)!;
+  const rawClassTeacher = classTeachers.find((t) => t.year === selectedYear)!;
+  const classTeacher = ctOverrides[selectedYear] ? { ...rawClassTeacher, ...ctOverrides[selectedYear] } : rawClassTeacher;
 
   const handleSave = (id: number, data: Partial<Alumni>) => {
     saveOverride(id, data);
     setOverrides(loadOverrides());
-    // Update selectedAlumni if it's the one being edited
     if (selectedAlumni?.id === id) {
       setSelectedAlumni((prev) => prev ? { ...prev, ...data } : prev);
     }
+  };
+
+  const handleCTSave = (year: number, data: Partial<ClassTeacher>) => {
+    saveCTOverride(year, data);
+    setCtOverrides(loadCTOverrides());
   };
 
   return (
@@ -299,7 +367,16 @@ export default function AlumniPage() {
 
         {/* Class teacher card */}
         {classTeacher && (
-          <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 mb-8 flex items-center gap-6 shadow-sm">
+          <div className="relative bg-white border border-[#E5E7EB] rounded-2xl p-6 mb-8 flex items-center gap-6 shadow-sm">
+            {isAdmin && (
+              <button
+                onClick={() => setEditingCT(classTeacher)}
+                className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-red-50 border border-red-200 rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-all z-10"
+                title="Засах"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
             <img src={classTeacher.photo} alt={classTeacher.name}
               className="w-20 h-20 rounded-xl bg-[#E5E7EB] border-2 border-[#32B4C5]/30 shrink-0 object-cover" />
             <div>
@@ -338,6 +415,13 @@ export default function AlumniPage() {
           alumni={editingAlumni}
           onClose={() => setEditingAlumni(null)}
           onSave={handleSave}
+        />
+      )}
+      {editingCT && (
+        <ClassTeacherEditModal
+          teacher={editingCT}
+          onClose={() => setEditingCT(null)}
+          onSave={handleCTSave}
         />
       )}
     </main>
