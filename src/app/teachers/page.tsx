@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 /* ── localStorage helpers ── */
 const OVERRIDES_KEY = "olula_teacher_overrides";
 const ADDITIONS_KEY = "olula_teacher_additions";
+const CUSTOM_YEARS_KEY = "olula_teacher_custom_years";
 
 function ls<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -20,6 +21,13 @@ function saveOverride(id: number, data: Partial<Teacher>) { const a = loadOverri
 function loadAdditions(): Record<number, Teacher[]> { return ls(ADDITIONS_KEY, {}); }
 function saveAddition(year: number, t: Teacher) { const a = loadAdditions(); a[year] = [...(a[year] || []), t]; lsSet(ADDITIONS_KEY, a); }
 function deleteAddition(year: number, id: number) { const a = loadAdditions(); a[year] = (a[year] || []).filter((x) => x.id !== id); lsSet(ADDITIONS_KEY, a); }
+
+function loadCustomYears(): number[] { return ls(CUSTOM_YEARS_KEY, []); }
+function saveCustomYear(year: number) { const a = loadCustomYears(); if (!a.includes(year)) lsSet(CUSTOM_YEARS_KEY, [...a, year].sort()); }
+function deleteCustomYear(year: number) {
+  lsSet(CUSTOM_YEARS_KEY, loadCustomYears().filter((y) => y !== year));
+  const adds = loadAdditions(); delete adds[year]; lsSet(ADDITIONS_KEY, adds);
+}
 
 function mergeTeachers(base: Teacher[], overrides: Record<number, Partial<Teacher>>): Teacher[] {
   return base.map((t) => overrides[t.id] ? { ...t, ...overrides[t.id] } : t);
@@ -130,19 +138,51 @@ function TeacherCard({ teacher, onEdit, onDelete, isAdmin }: {
   );
 }
 
+/* ── New Year Modal ── */
+function NewYearModal({ onClose, onSave }: { onClose: () => void; onSave: (year: number) => void }) {
+  const [year, setYear] = useState("");
+  const submit = () => {
+    const y = parseInt(year);
+    if (!y || y < 2000 || y > 2100) return;
+    onSave(y); onClose();
+  };
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-xs bg-white border border-[#E5E7EB] rounded-2xl shadow-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2"><Plus className="w-4 h-4 text-[#32B4C5]" /><h2 className="text-[#0E172B] font-bold">Шинэ он нэмэх</h2></div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        </div>
+        <label className="block text-xs text-[#647588] mb-1">Он (жишээ: 2027)</label>
+        <input value={year} onChange={(e) => setYear(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="2027" autoFocus
+          className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm text-[#0E172B] focus:outline-none focus:border-[#32B4C5] mb-4" />
+        <button onClick={submit}
+          className="w-full flex items-center justify-center gap-2 bg-[#32B4C5] hover:bg-[#2aa3b2] text-white font-semibold py-2.5 rounded-xl transition-all">
+          <Plus className="w-4 h-4" />Нэмэх
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function TeachersPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
-  const [selectedYear, setSelectedYear] = useState<2024 | 2025 | 2026>(2026);
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [addingTeacher, setAddingTeacher] = useState(false);
+  const [addingYear, setAddingYear] = useState(false);
   const [overrides, setOverrides] = useState<Record<number, Partial<Teacher>>>({});
   const [additions, setAdditions] = useState<Record<number, Teacher[]>>({});
+  const [customYears, setCustomYears] = useState<number[]>([]);
 
   useEffect(() => {
     setOverrides(loadOverrides());
     setAdditions(loadAdditions());
+    setCustomYears(loadCustomYears());
   }, []);
 
   const getMergedData = (year: number): Teacher[] => {
@@ -162,7 +202,7 @@ export default function TeachersPage() {
   };
 
   const handleAdd = (data: Partial<Teacher>) => {
-    const t: Teacher = { ...BLANK, ...data, id: Date.now(), year: selectedYear };
+    const t: Teacher = { ...BLANK, ...data, id: Date.now(), year: selectedYear as 2024 | 2025 | 2026 };
     saveAddition(selectedYear, t);
     setAdditions(loadAdditions());
   };
@@ -171,6 +211,21 @@ export default function TeachersPage() {
     deleteAddition(selectedYear, id);
     setAdditions(loadAdditions());
   };
+
+  const handleNewYear = (year: number) => {
+    saveCustomYear(year);
+    setCustomYears(loadCustomYears());
+    setSelectedYear(year);
+  };
+
+  const handleDeleteYear = (year: number) => {
+    deleteCustomYear(year);
+    setCustomYears(loadCustomYears());
+    setAdditions(loadAdditions());
+    if (selectedYear === year) setSelectedYear(2026);
+  };
+
+  const allYears = [...STATIC_YEARS.map((y) => y.year), ...customYears].sort();
 
   return (
     <main className="min-h-screen bg-[#F3F5F6] pt-16">
@@ -193,18 +248,36 @@ export default function TeachersPage() {
         )}
 
         {/* Year selector */}
-        <div className="flex gap-3 justify-center mb-8 flex-wrap">
-          {STATIC_YEARS.map((y) => (
-            <button key={y.year} onClick={() => setSelectedYear(y.year)}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all text-sm ${
-                selectedYear === y.year
-                  ? "bg-[#32B4C5] text-white shadow-lg shadow-[#32B4C5]/30"
-                  : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40 hover:text-[#32B4C5]"
-              }`}>
-              {y.year} он
-              <span className="ml-2 text-xs opacity-70">({getMergedData(y.year).length} багш)</span>
+        <div className="flex gap-3 justify-center mb-8 flex-wrap items-center">
+          {allYears.map((year) => {
+            const isCustom = customYears.includes(year);
+            const active = selectedYear === year;
+            return (
+              <div key={year} className="relative group/yr">
+                <button onClick={() => setSelectedYear(year)}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all text-sm ${
+                    active ? "bg-[#32B4C5] text-white shadow-lg shadow-[#32B4C5]/30"
+                           : "bg-white border border-[#E5E7EB] text-[#647588] hover:border-[#32B4C5]/40 hover:text-[#32B4C5]"
+                  } ${isCustom && isAdmin ? "pr-8" : ""}`}>
+                  {year} он
+                  <span className="ml-2 text-xs opacity-70">({getMergedData(year).length} багш)</span>
+                </button>
+                {isCustom && isAdmin && (
+                  <button onClick={(e) => { e.stopPropagation(); handleDeleteYear(year); }}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/yr:opacity-100 transition-opacity hover:bg-red-700"
+                    title="Он устгах">
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {isAdmin && (
+            <button onClick={() => setAddingYear(true)}
+              className="px-4 py-3 rounded-xl font-semibold transition-all text-sm bg-white border border-dashed border-[#32B4C5]/50 text-[#32B4C5] hover:bg-[#32B4C5]/5 flex items-center gap-1.5">
+              <Plus className="w-4 h-4" />Шинэ он
             </button>
-          ))}
+          )}
         </div>
 
         {/* Stats bar */}
@@ -252,6 +325,9 @@ export default function TeachersPage() {
       {addingTeacher && (
         <TeacherFormModal title="Шинэ багш нэмэх" initial={{}}
           onClose={() => setAddingTeacher(false)} onSave={handleAdd} />
+      )}
+      {addingYear && (
+        <NewYearModal onClose={() => setAddingYear(false)} onSave={handleNewYear} />
       )}
     </main>
   );

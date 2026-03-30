@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { MessageCircle, Send, MapPin, Globe, Plus, X } from "lucide-react";
+import { MessageCircle, Send, MapPin, Globe, Plus, X, Trash2 } from "lucide-react";
 import { countryData, qaData, QAPost } from "@/data/blog";
 import { worldPaths } from "@/data/worldmap";
 import { useAuth } from "@/context/AuthContext";
@@ -134,6 +134,7 @@ function WorldMap({ countries, highlightedCountry }: { countries: typeof country
 
 function QASection() {
   const { user, isAuthenticated } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [questions, setQuestions] = useState<QAPost[]>(qaData);
   const [newQuestion, setNewQuestion] = useState("");
   const [answerInputs, setAnswerInputs] = useState<Record<number, string>>({});
@@ -180,6 +181,17 @@ function QASection() {
       )
     );
     setAnswerInputs((prev) => ({ ...prev, [qId]: "" }));
+  };
+
+  const deleteQuestion = (qId: number) => {
+    setQuestions((prev) => prev.filter((q) => q.id !== qId));
+    if (expandedId === qId) setExpandedId(null);
+  };
+
+  const deleteAnswer = (qId: number, aId: number) => {
+    setQuestions((prev) => prev.map((q) =>
+      q.id === qId ? { ...q, answers: q.answers.filter((a) => a.id !== aId) } : q
+    ));
   };
 
   return (
@@ -245,7 +257,16 @@ function QASection() {
                     </span>
                   </div>
                 </div>
-                <MessageCircle className={`w-5 h-5 shrink-0 mt-0.5 transition-colors ${expandedId === q.id ? "text-emerald-500" : "text-gray-300"}`} />
+                <div className="flex items-center gap-2 shrink-0">
+                  {isAdmin && (
+                    <button onClick={(e) => { e.stopPropagation(); deleteQuestion(q.id); }}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 border border-red-200 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                      title="Устгах">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <MessageCircle className={`w-5 h-5 transition-colors ${expandedId === q.id ? "text-emerald-500" : "text-gray-300"}`} />
+                </div>
               </div>
             </div>
 
@@ -265,6 +286,13 @@ function QASection() {
                               {a.answeredByRole === "teacher" ? "Багш" : "Төгсөгч"}
                             </span>
                             <span className="text-gray-400 text-xs ml-auto">{a.date}</span>
+                            {isAdmin && (
+                              <button onClick={() => deleteAnswer(q.id, a.id)}
+                                className="w-5 h-5 flex items-center justify-center rounded text-red-300 hover:bg-red-500 hover:text-white transition-all"
+                                title="Хариулт устгах">
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                           <p className="text-[#647588] text-sm">{a.content}</p>
                         </div>
