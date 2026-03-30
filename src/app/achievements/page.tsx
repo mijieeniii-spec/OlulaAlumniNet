@@ -6,6 +6,14 @@ import { alumni2024, alumni2025, Alumni } from "@/data/alumni";
 import { worldPaths } from "@/data/worldmap";
 import { useAuth } from "@/context/AuthContext";
 
+/* ── localStorage helpers for Q&A ── */
+const QA_KEY = "olula_qa_data";
+
+function loadQA(): QAPost[] {
+  return lsGet<QAPost[]>(QA_KEY, qaData);
+}
+function saveQA(posts: QAPost[]) { lsSet(QA_KEY, posts); }
+
 /* ── localStorage helpers for countries ── */
 const COUNTRY_KEY = "olula_country_additions";
 type CountryEntry = { country: string; flag: string; lat: number; lng: number };
@@ -193,6 +201,13 @@ function QASection() {
   const [answerInputs, setAnswerInputs] = useState<Record<number, string>>({});
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
+  useEffect(() => { setQuestions(loadQA()); }, []);
+
+  function updateQuestions(next: QAPost[]) {
+    setQuestions(next);
+    saveQA(next);
+  }
+
   const canAsk = isAuthenticated && user?.role === "student";
   const canAnswer = isAuthenticated && (user?.role === "alumni" || user?.role === "teacher");
 
@@ -206,43 +221,42 @@ function QASection() {
       askedDate: new Date().toISOString().split("T")[0],
       answers: [],
     };
-    setQuestions([newQ, ...questions]);
+    updateQuestions([newQ, ...questions]);
     setNewQuestion("");
   };
 
   const submitAnswer = (qId: number) => {
     const content = answerInputs[qId]?.trim();
     if (!content || !user) return;
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === qId
-          ? {
-              ...q,
-              answers: [
-                ...q.answers,
-                {
-                  id: Date.now(),
-                  content,
-                  answeredBy: user.name,
-                  answeredByEmail: user.email,
-                  answeredByRole: user.role as "alumni" | "teacher",
-                  date: new Date().toISOString().split("T")[0],
-                },
-              ],
-            }
-          : q
-      )
+    const next = questions.map((q) =>
+      q.id === qId
+        ? {
+            ...q,
+            answers: [
+              ...q.answers,
+              {
+                id: Date.now(),
+                content,
+                answeredBy: user.name,
+                answeredByEmail: user.email,
+                answeredByRole: user.role as "alumni" | "teacher",
+                date: new Date().toISOString().split("T")[0],
+              },
+            ],
+          }
+        : q
     );
+    updateQuestions(next);
     setAnswerInputs((prev) => ({ ...prev, [qId]: "" }));
   };
 
   const deleteQuestion = (qId: number) => {
-    setQuestions((prev) => prev.filter((q) => q.id !== qId));
+    updateQuestions(questions.filter((q) => q.id !== qId));
     if (expandedId === qId) setExpandedId(null);
   };
 
   const deleteAnswer = (qId: number, aId: number) => {
-    setQuestions((prev) => prev.map((q) =>
+    updateQuestions(questions.map((q) =>
       q.id === qId ? { ...q, answers: q.answers.filter((a) => a.id !== aId) } : q
     ));
   };
