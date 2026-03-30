@@ -22,7 +22,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ADMIN_EMAIL = "Admin_olula@admin.olula.mn";
-const ADMIN_PASSWORD = "Admin@2025";
+const ADMIN_PASSWORD = "1234";
 
 function detectRole(email: string): UserRole {
   if (email === ADMIN_EMAIL) return "admin";
