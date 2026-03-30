@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { MessageCircle, Send, MapPin, Globe, Plus, X, Trash2 } from "lucide-react";
 import { countryData, qaData, QAPost } from "@/data/blog";
+import { lookupCountry, COUNTRY_COORDS } from "@/data/countryCoords";
 import { alumni2024, alumni2025, Alumni } from "@/data/alumni";
 import { worldPaths } from "@/data/worldmap";
 import { useAuth } from "@/context/AuthContext";
@@ -396,9 +397,38 @@ function QASection() {
 }
 
 function AddCountryModal({ onClose, onSave }: { onClose: () => void; onSave: (c: CountryEntry) => void }) {
-  const [form, setForm] = useState({ country: "", flag: "", lat: "", lng: "" });
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const valid = form.country.trim() && form.flag.trim() && form.lat.trim() && form.lng.trim();
+  const [name, setName] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  const matched = lookupCountry(name);
+
+  function handleNameChange(val: string) {
+    setName(val);
+    if (val.trim().length < 1) { setSuggestions([]); return; }
+    const lower = val.trim().toLowerCase();
+    const hits = Object.keys(COUNTRY_COORDS)
+      .filter((k) => k.toLowerCase().includes(lower))
+      .slice(0, 6);
+    setSuggestions(hits);
+  }
+
+  function pickSuggestion(s: string) {
+    setName(s);
+    setSuggestions([]);
+  }
+
+  function handleSave() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const coord = lookupCountry(trimmed);
+    onSave({
+      country: trimmed,
+      flag: coord?.flag ?? "🌍",
+      lat: coord?.lat ?? 0,
+      lng: coord?.lng ?? 0,
+    });
+    onClose();
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -406,36 +436,52 @@ function AddCountryModal({ onClose, onSave }: { onClose: () => void; onSave: (c:
       <div className="relative z-10 bg-white border border-[#E5E7EB] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
         <h3 className="text-[#0E172B] font-bold mb-1">Улс нэмэх</h3>
-        <p className="text-[#647588] text-xs mb-4">Газрын зурагт цэг харуулахын тулд уртраг/өргөрөг оруулна</p>
-        <div className="space-y-3">
-          {[
-            { label: "Улсын нэр", key: "country", placeholder: "жишээ: Швед" },
-            { label: "Туг (emoji)", key: "flag", placeholder: "жишээ: 🇸🇪" },
-          ].map(({ label, key, placeholder }) => (
-            <div key={key}>
-              <label className="block text-xs text-[#647588] mb-1">{label}</label>
-              <input value={form[key as keyof typeof form]} onChange={(e) => set(key, e.target.value)} placeholder={placeholder}
-                className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-[#0E172B] placeholder-gray-400 text-sm focus:outline-none focus:border-[#32B4C5]" />
+        <p className="text-[#647588] text-xs mb-4">Улсын нэрийг монголоор бичнэ үү</p>
+        <div className="relative">
+          <label className="block text-xs text-[#647588] mb-1">Улсын нэр</label>
+          <input
+            value={name}
+            onChange={(e) => handleNameChange(e.target.value)}
+            placeholder="жишээ: Швед"
+            autoFocus
+            className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-[#0E172B] placeholder-gray-400 text-sm focus:outline-none focus:border-[#32B4C5]"
+          />
+          {suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-10 overflow-hidden">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => pickSuggestion(s)}
+                  className="w-full text-left px-4 py-2 text-sm text-[#0E172B] hover:bg-[#F3F5F6] flex items-center gap-2"
+                >
+                  <span>{COUNTRY_COORDS[s].flag}</span>
+                  <span>{s}</span>
+                </button>
+              ))}
             </div>
-          ))}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-xs text-[#647588] mb-1">Өргөрөг (lat)</label>
-              <input value={form.lat} onChange={(e) => set("lat", e.target.value)} placeholder="жишээ: 59.3"
-                type="number" className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2.5 text-[#0E172B] placeholder-gray-400 text-sm focus:outline-none focus:border-[#32B4C5]" />
-            </div>
-            <div>
-              <label className="block text-xs text-[#647588] mb-1">Уртраг (lng)</label>
-              <input value={form.lng} onChange={(e) => set("lng", e.target.value)} placeholder="жишээ: 18.1"
-                type="number" className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2.5 text-[#0E172B] placeholder-gray-400 text-sm focus:outline-none focus:border-[#32B4C5]" />
-            </div>
-          </div>
-          <button disabled={!valid}
-            onClick={() => { onSave({ country: form.country.trim(), flag: form.flag.trim(), lat: parseFloat(form.lat), lng: parseFloat(form.lng) }); onClose(); }}
-            className="w-full bg-[#32B4C5] hover:bg-[#5AC0A9] disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-2.5 rounded-xl transition-all">
-            Нэмэх
-          </button>
+          )}
         </div>
+
+        {matched && (
+          <div className="mt-3 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5 text-sm text-emerald-700">
+            <span className="text-xl">{matched.flag}</span>
+            <span className="font-medium">{name.trim()}</span>
+            <span className="text-xs text-emerald-500 ml-auto">байршил олдлоо ✓</span>
+          </div>
+        )}
+        {!matched && name.trim().length > 0 && (
+          <div className="mt-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-xs text-amber-700">
+            <span>Байршил олдсонгүй — газрын зураг дээр харагдахгүй байж болно</span>
+          </div>
+        )}
+
+        <button
+          disabled={!name.trim()}
+          onClick={handleSave}
+          className="mt-4 w-full bg-[#32B4C5] hover:bg-[#5AC0A9] disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-2.5 rounded-xl transition-all"
+        >
+          Нэмэх
+        </button>
       </div>
     </div>
   );
