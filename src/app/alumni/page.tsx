@@ -205,11 +205,6 @@ function AlumniModal({ alumni, onClose }: { alumni: Alumni; onClose: () => void 
             ))}
           </div>
 
-          <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4 flex items-center gap-3">
-            <User className="w-5 h-5 text-[#32B4C5] shrink-0" />
-            <div><p className="text-[#647588] text-xs">Анги даасан багш</p><p className="text-[#0E172B] text-sm font-semibold">{alumni.homeRoomTeacher}</p></div>
-          </div>
-
           <div>
             <h3 className="text-[#0E172B] font-semibold mb-3 flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-[#32B4C5]" />Одоо сурч буй сургууль
