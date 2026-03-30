@@ -273,10 +273,6 @@ function AlumniCard({ alumni, onClick, onEdit, isAdmin }: { alumni: Alumni; onCl
         <h3 className="text-[#0E172B] font-semibold text-base mb-1 group-hover:text-[#32B4C5] transition-colors">{alumni.name}</h3>
         <p className="text-[#647588] text-sm mb-1">{alumni.currentUniversity}</p>
         <p className="text-gray-400 text-xs mb-3">{alumni.currentCountry}</p>
-        <div className="flex items-center gap-1 text-xs text-gray-400">
-          <User className="w-3 h-3" />
-          <span>Анги даасан багш: {alumni.homeRoomTeacher}</span>
-        </div>
         <blockquote className="mt-3 text-gray-400 italic text-xs border-t border-[#E5E7EB] pt-3 w-full line-clamp-2">
           &ldquo;{alumni.quote}&rdquo;
         </blockquote>
