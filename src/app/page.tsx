@@ -53,7 +53,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
-            Манай сургуулийн нэгэн гэр бүл. Холбоо барьж, туршлага хуваалцаж, дэлхий даяар нэгдэж буй Олула-чуудтай нэгдээрэй.
+            Олула гэр бүл. Холбоо тогтоож, туршлага хуваалцаж, дэлхий даяарх Олула-чуудтай нэгдээрэй.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
