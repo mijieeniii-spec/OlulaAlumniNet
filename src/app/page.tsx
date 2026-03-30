@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { GraduationCap, Users, BookOpen, Image, Trophy, Newspaper, ChevronRight, Star, Globe, ArrowRight } from "lucide-react";
 import { countryData } from "@/data/blog";
+import Mascot from "@/components/Mascot";
 
 const stats = [
   { label: "Төгсөгчид", value: "46+", icon: <GraduationCap className="w-5 h-5" />, color: "from-[#32B4C5] to-[#20AFCB]" },
@@ -39,6 +40,8 @@ export default function HomePage() {
             <Star className="w-3.5 h-3.5 text-[#32B4C5]" />
             <span className="text-[#5AC0A9] text-xs font-medium">Олула дунд сургуулийн төгсөгчдийн платформ</span>
           </div>
+
+          <Mascot size="xl" className="mb-4 drop-shadow-2xl" animate />
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight mb-6">
             Олула
@@ -93,6 +96,7 @@ export default function HomePage() {
       <section className="py-16 px-4 bg-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
+            <Mascot size="md" message="Юу сонирхож байна?" className="mb-3" />
             <h2 className="text-2xl font-bold text-[#0E172B] mb-2">Хэсгүүд</h2>
             <p className="text-[#647588] text-sm">Сайтын үндсэн хэсгүүдийг судлаарай</p>
           </div>
@@ -122,9 +126,12 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <div className="bg-white border border-[#E5E7EB] rounded-2xl p-8 shadow-sm">
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-[#0E172B]">Олула дэлхий даяар</h2>
-                <p className="text-[#647588] text-sm mt-1">Манай төгсөгчид хаана сурч байна</p>
+              <div className="flex items-center gap-3">
+                <Mascot size="sm" />
+                <div>
+                  <h2 className="text-xl font-bold text-[#0E172B]">Олула дэлхий даяар</h2>
+                  <p className="text-[#647588] text-sm mt-1">Манай төгсөгчид хаана сурч байна</p>
+                </div>
               </div>
               <Link href="/achievements" className="text-[#32B4C5] text-sm hover:text-[#20AFCB] flex items-center gap-1">
                 Дэлгэрэнгүй <ChevronRight className="w-4 h-4" />

@@ -6,6 +6,7 @@ import { lookupCountry, COUNTRY_COORDS } from "@/data/countryCoords";
 import { alumni2024, alumni2025, Alumni } from "@/data/alumni";
 import { worldPaths } from "@/data/worldmap";
 import { useAuth } from "@/context/AuthContext";
+import Mascot from "@/components/Mascot";
 
 /* ── localStorage helpers for Q&A ── */
 const QA_KEY = "olula_qa_data";
@@ -525,6 +526,7 @@ export default function AchievementsPage() {
       {/* Hero */}
       <div className="bg-[#1C274C] py-16 px-4">
         <div className="max-w-5xl mx-auto text-center">
+          <Mascot size="lg" message="Бид дэлхий даяар!" className="mb-3" />
           <span className="inline-block bg-[#32B4C5]/10 border border-[#32B4C5]/30 text-[#5AC0A9] text-xs px-4 py-1.5 rounded-full mb-4">
             Амжилт
           </span>

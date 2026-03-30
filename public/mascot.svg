@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" fill="none">
+  <!-- Body -->
+  <ellipse cx="100" cy="155" rx="55" ry="60" fill="#8B6914"/>
+  <!-- Shirt -->
+  <path d="M55 140 C55 140 60 200 100 210 C140 200 145 140 145 140 C130 130 70 130 55 140Z" fill="#5AC0A9"/>
+  <!-- Shirt buttons -->
+  <circle cx="100" cy="160" r="2.5" fill="#4A9E8E"/>
+  <circle cx="100" cy="175" r="2.5" fill="#4A9E8E"/>
+  <circle cx="100" cy="190" r="2.5" fill="#4A9E8E"/>
+  <!-- Tie -->
+  <polygon points="100,140 94,160 100,155 106,160" fill="#2D6B4F"/>
+  <!-- Pocket -->
+  <rect x="110" y="155" width="18" height="15" rx="2" fill="#4A9E8E" opacity="0.5"/>
+  <text x="114" y="166" font-size="5" fill="white" font-family="Arial" font-weight="bold">OLULA</text>
+  <!-- Head -->
+  <ellipse cx="100" cy="85" rx="50" ry="45" fill="#A0772B"/>
+  <!-- Ear tufts -->
+  <path d="M60 50 L55 25 L75 55Z" fill="#8B6914"/>
+  <path d="M140 50 L145 25 L125 55Z" fill="#8B6914"/>
+  <!-- Face disc -->
+  <ellipse cx="100" cy="90" rx="38" ry="35" fill="#C4A24C"/>
+  <!-- Eye whites -->
+  <ellipse cx="82" cy="82" rx="18" ry="18" fill="white" stroke="#555" stroke-width="2"/>
+  <ellipse cx="118" cy="82" rx="18" ry="18" fill="white" stroke="#555" stroke-width="2"/>
+  <!-- Glasses frames -->
+  <ellipse cx="82" cy="82" rx="20" ry="20" fill="none" stroke="#333" stroke-width="3"/>
+  <ellipse cx="118" cy="82" rx="20" ry="20" fill="none" stroke="#333" stroke-width="3"/>
+  <line x1="98" y1="82" x2="102" y2="82" stroke="#333" stroke-width="3"/>
+  <line x1="62" y1="82" x2="50" y2="75" stroke="#333" stroke-width="3"/>
+  <line x1="138" y1="82" x2="150" y2="75" stroke="#333" stroke-width="3"/>
+  <!-- Pupils -->
+  <circle cx="85" cy="84" r="10" fill="#3D2B1F"/>
+  <circle cx="121" cy="84" r="10" fill="#3D2B1F"/>
+  <!-- Eye shine -->
+  <circle cx="88" cy="80" r="3.5" fill="white"/>
+  <circle cx="124" cy="80" r="3.5" fill="white"/>
+  <!-- Beak -->
+  <polygon points="100,95 94,108 106,108" fill="#E8A317"/>
+  <!-- Smile -->
+  <path d="M90 112 Q100 118 110 112" stroke="#8B6914" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Feet -->
+  <g fill="#E8A317">
+    <path d="M75 210 L60 230 L70 225 L65 240 L78 228 L75 240 L85 225 L80 210Z"/>
+    <path d="M125 210 L140 230 L130 225 L135 240 L122 228 L125 240 L115 225 L120 210Z"/>
+  </g>
+  <!-- Wings/Arms -->
+  <path d="M55 145 C40 155 38 175 45 185 L55 175" fill="#A0772B"/>
+  <path d="M145 145 C160 155 162 175 155 185 L145 175" fill="#A0772B"/>
+</svg>

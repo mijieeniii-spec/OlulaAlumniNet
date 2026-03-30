@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Mail, Phone, MapPin, Share2, Users, Pencil, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
+import Mascot from "./Mascot";
 
 const FOOTER_KEY = "olula_footer_data";
 
@@ -198,9 +199,12 @@ export default function Footer() {
           </div>
 
           <div className="border-t border-white/10 mt-8 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
-            <p className="text-gray-500 text-xs">
-              {data.copyright}
-            </p>
+            <div className="flex items-center gap-2">
+              <Mascot size="sm" animate={false} />
+              <p className="text-gray-500 text-xs">
+                {data.copyright}
+              </p>
+            </div>
             <p className="text-gray-600 text-xs">
               <a href="https://www.olula.edu.mn" target="_blank" rel="noopener noreferrer" className="hover:text-[#32B4C5] transition-colors">
                 olula.edu.mn

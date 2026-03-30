@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Mail, BookOpen, Pencil, Save, X, Plus, Trash2 } from "lucide-react";
 import { teachers2024, teachers2025, teachers2026, Teacher } from "@/data/teachers";
 import { useAuth } from "@/context/AuthContext";
+import Mascot from "@/components/Mascot";
 
 /* ── localStorage helpers ── */
 const OVERRIDES_KEY = "olula_teacher_overrides";
@@ -231,6 +232,7 @@ export default function TeachersPage() {
     <main className="min-h-screen bg-[#F3F5F6] pt-16">
       <div className="bg-[#1C274C] py-16 px-4">
         <div className="max-w-5xl mx-auto text-center">
+          <Mascot size="lg" message="Багш нараа хүндэлье!" className="mb-3" />
           <span className="inline-block bg-[#32B4C5]/10 border border-[#32B4C5]/30 text-[#5AC0A9] text-xs px-4 py-1.5 rounded-full mb-4">Багш нар</span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">
             Олула дунд сургуулийн <span className="text-[#32B4C5]">Багш нар</span>

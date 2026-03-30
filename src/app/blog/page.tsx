@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Plus, X, Calendar, Tag, Newspaper, BookOpen, Search, Upload, Trash2 } from "lucide-react";
 import { blogPosts, categories as staticCategories, BlogPost } from "@/data/blog";
 import { useAuth } from "@/context/AuthContext";
+import Mascot from "@/components/Mascot";
 
 /* ── localStorage helpers ── */
 const CUSTOM_CATS_KEY = "olula_blog_custom_categories";
@@ -290,6 +291,7 @@ export default function BlogPage() {
       {/* Hero */}
       <div className="bg-[#1C274C] py-16 px-4">
         <div className="max-w-5xl mx-auto text-center">
+          <Mascot size="lg" message="Шинэ мэдээтэй!" className="mb-3" />
           <span className="inline-block bg-[#32B4C5]/10 border border-[#32B4C5]/30 text-[#5AC0A9] text-xs px-4 py-1.5 rounded-full mb-4">Блог / Мэдээ</span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-3">
             Олула <span className="text-[#32B4C5]">Блог & Мэдээ</span>
