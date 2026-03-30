@@ -268,10 +268,10 @@ function AlumniCard({ alumni, onClick, onEdit, isAdmin }: { alumni: Alumni; onCl
       )}
       <div className="flex flex-col items-center text-center cursor-pointer" onClick={onClick}>
         <img src={alumni.photo} alt={alumni.name}
-          className="w-20 h-20 rounded-xl bg-[#E5E7EB] mb-3 border border-[#32B4C5]/20 group-hover:border-[#32B4C5]/50 transition-all object-cover" />
+          className="w-32 h-32 rounded-2xl bg-[#E5E7EB] mb-4 border border-[#32B4C5]/20 group-hover:border-[#32B4C5]/50 transition-all object-cover" />
         <span className="text-[#32B4C5] text-xs font-medium mb-1">Class of {alumni.classYear}</span>
-        <h3 className="text-[#0E172B] font-semibold text-sm mb-1 group-hover:text-[#32B4C5] transition-colors">{alumni.name}</h3>
-        <p className="text-[#647588] text-xs mb-2">{alumni.currentUniversity}</p>
+        <h3 className="text-[#0E172B] font-semibold text-base mb-1 group-hover:text-[#32B4C5] transition-colors">{alumni.name}</h3>
+        <p className="text-[#647588] text-sm mb-1">{alumni.currentUniversity}</p>
         <p className="text-gray-400 text-xs mb-3">{alumni.currentCountry}</p>
         <div className="flex items-center gap-1 text-xs text-gray-400">
           <User className="w-3 h-3" />
@@ -388,7 +388,7 @@ export default function AlumniPage() {
         )}
 
         {/* Alumni grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
           {currentClass.data.map((alum) => (
             <AlumniCard
               key={alum.id}

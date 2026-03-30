@@ -108,21 +108,21 @@ function TeacherCard({ teacher, onEdit, isAdmin }: { teacher: Teacher; onEdit: (
         <img
           src={teacher.photo}
           alt={teacher.name}
-          className="w-20 h-20 rounded-xl bg-[#E5E7EB] mb-3 border border-[#32B4C5]/20 group-hover:border-[#32B4C5]/50 transition-all"
+          className="w-32 h-32 rounded-2xl bg-[#E5E7EB] mb-4 border border-[#32B4C5]/20 group-hover:border-[#32B4C5]/50 transition-all object-cover"
         />
         {teacher.role === "Анги даасан багш" && (
           <span className="bg-[#32B4C5]/10 text-[#32B4C5] text-xs px-2 py-0.5 rounded-full mb-2 font-medium">
             Анги даасан багш
           </span>
         )}
-        <h3 className="text-[#0E172B] font-semibold text-sm mb-1 group-hover:text-[#32B4C5] transition-colors">{teacher.name}</h3>
-        <div className="flex items-center gap-1 text-[#647588] text-xs mb-2">
-          <BookOpen className="w-3 h-3" />
+        <h3 className="text-[#0E172B] font-semibold text-base mb-1 group-hover:text-[#32B4C5] transition-colors">{teacher.name}</h3>
+        <div className="flex items-center gap-1 text-[#647588] text-sm mb-2">
+          <BookOpen className="w-3.5 h-3.5" />
           <span>{teacher.subject}</span>
         </div>
         <div className="flex items-center gap-1 text-gray-400 text-xs">
           <Mail className="w-3 h-3" />
-          <span className="truncate max-w-[140px]">{teacher.email}</span>
+          <span className="truncate max-w-[160px]">{teacher.email}</span>
         </div>
       </div>
     </div>
@@ -215,7 +215,7 @@ export default function TeachersPage() {
         </div>
 
         {/* Teachers grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
           {currentYear.data.map((teacher) => (
             <TeacherCard
               key={teacher.id}
