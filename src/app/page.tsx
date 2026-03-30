@@ -1,8 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect } from "react";
 import { GraduationCap, Users, BookOpen, Image, Trophy, Newspaper, ChevronRight, Star, Globe, ArrowRight } from "lucide-react";
-import { alumni2024, alumni2025 } from "@/data/alumni";
 import { countryData } from "@/data/blog";
 
 const stats = [
@@ -20,15 +18,7 @@ const sections = [
   { href: "/blog", icon: <Newspaper className="w-6 h-6" />, title: "Блог/Мэдээ", desc: "Төгсөгч, багш нарын туршлага, зөвлөгөө", color: "border-purple-200 hover:border-purple-400", iconBg: "bg-purple-50 text-purple-500" },
 ];
 
-const featuredAlumni = [...alumni2024.slice(0, 3), ...alumni2025.slice(0, 3)];
-
 export default function HomePage() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentSlide((s) => (s + 1) % featuredAlumni.length), 3500);
-    return () => clearInterval(timer);
-  }, []);
 
   return (
     <main className="min-h-screen bg-[#F3F5F6]">
@@ -96,58 +86,6 @@ export default function HomePage() {
               <div className="text-[#647588] text-sm">{s.label}</div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Featured alumni carousel */}
-      <section className="py-16 px-4 bg-[#F3F5F6]">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-[#0E172B]">Онцлох Төгсөгчид</h2>
-              <p className="text-[#647588] text-sm mt-1">Манай төгсөгчдийн ололт амжилт</p>
-            </div>
-            <Link href="/alumni" className="flex items-center gap-1 text-[#32B4C5] hover:text-[#20AFCB] text-sm transition-colors">
-              Бүгдийг үзэх <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="relative overflow-hidden rounded-2xl bg-white border border-[#E5E7EB] shadow-sm">
-            <div
-              className="flex transition-transform duration-700 ease-in-out"
-              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-            >
-              {featuredAlumni.map((alum) => (
-                <div key={alum.id} className="min-w-full p-8 flex flex-col md:flex-row items-center gap-8">
-                  <img
-                    src={alum.photo}
-                    alt={alum.name}
-                    className="w-32 h-32 rounded-2xl bg-[#E5E7EB] shrink-0 border-2 border-[#32B4C5]/30"
-                  />
-                  <div className="text-center md:text-left">
-                    <span className="inline-block bg-[#32B4C5]/10 text-[#32B4C5] text-xs font-medium px-3 py-1 rounded-full mb-3">
-                      Class of {alum.classYear}
-                    </span>
-                    <h3 className="text-2xl font-bold text-[#0E172B] mb-2">{alum.name}</h3>
-                    <p className="text-[#647588] mb-3">{alum.currentUniversity} · {alum.currentCountry}</p>
-                    <blockquote className="text-[#647588] italic text-lg border-l-2 border-[#32B4C5] pl-4">
-                      &ldquo;{alum.quote}&rdquo;
-                    </blockquote>
-                    <p className="text-gray-400 text-sm mt-3">{alum.major}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-center gap-2 pb-4">
-              {featuredAlumni.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentSlide(i)}
-                  className={`h-2 rounded-full transition-all ${i === currentSlide ? "bg-[#32B4C5] w-4" : "bg-gray-200 w-2"}`}
-                />
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
