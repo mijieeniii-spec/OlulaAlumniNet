@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type UserRole = "student" | "alumni" | "teacher" | null;
+export type UserRole = "student" | "alumni" | "teacher" | "admin" | null;
 
 export interface User {
   name: string;
@@ -21,7 +21,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const ADMIN_EMAIL = "Admin_olula@admin.olula.mn";
+const ADMIN_PASSWORD = "Admin@2025";
+
 function detectRole(email: string): UserRole {
+  if (email === ADMIN_EMAIL) return "admin";
   if (email.endsWith("@student.olula.mn")) return "student";
   if (email.endsWith("@alumni.olula.mn")) return "alumni";
   if (email.endsWith("@teacher.olula.mn")) return "teacher";
@@ -43,6 +47,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    // Admin login
+    if (email === ADMIN_EMAIL) {
+      if (password !== ADMIN_PASSWORD) return false;
+      const adminUser: User = {
+        name: "Админ",
+        email: ADMIN_EMAIL,
+        role: "admin",
+        photo: `https://api.dicebear.com/7.x/personas/svg?seed=admin`,
+      };
+      setUser(adminUser);
+      localStorage.setItem("olula_user", JSON.stringify(adminUser));
+      return true;
+    }
+
     const role = detectRole(email);
     if (!role) return false;
     const users = JSON.parse(localStorage.getItem("olula_users") || "[]");
@@ -65,6 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string
   ): Promise<{ success: boolean; message: string }> => {
+    if (email === ADMIN_EMAIL) {
+      return { success: false, message: "Энэ хаяг бүртгэлтэй байна." };
+    }
     const role = detectRole(email);
     if (!role) {
       return {

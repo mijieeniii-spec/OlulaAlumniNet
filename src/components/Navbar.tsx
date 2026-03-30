@@ -26,8 +26,8 @@ export default function Navbar() {
   const openLogin = () => { setAuthMode("login"); setAuthOpen(true); setMenuOpen(false); };
   const openRegister = () => { setAuthMode("register"); setAuthOpen(true); setMenuOpen(false); };
 
-  const roleLabel = user?.role === "student" ? "Сурагч" : user?.role === "alumni" ? "Төгсөгч" : user?.role === "teacher" ? "Багш" : "";
-  const roleBadgeColor = user?.role === "student" ? "bg-blue-500" : user?.role === "alumni" ? "bg-[#32B4C5]" : "bg-emerald-500";
+  const roleLabel = user?.role === "admin" ? "Админ" : user?.role === "student" ? "Сурагч" : user?.role === "alumni" ? "Төгсөгч" : user?.role === "teacher" ? "Багш" : "";
+  const roleBadgeColor = user?.role === "admin" ? "bg-red-600" : user?.role === "student" ? "bg-blue-500" : user?.role === "alumni" ? "bg-[#32B4C5]" : "bg-emerald-500";
 
   return (
     <>
