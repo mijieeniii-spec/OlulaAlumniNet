@@ -1,9 +1,62 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageCircle, Send, MapPin, Globe, Plus, X, Trash2 } from "lucide-react";
 import { countryData, qaData, QAPost } from "@/data/blog";
+import { alumni2024, alumni2025, Alumni } from "@/data/alumni";
 import { worldPaths } from "@/data/worldmap";
 import { useAuth } from "@/context/AuthContext";
+
+/* ── localStorage helpers for countries ── */
+const COUNTRY_KEY = "olula_country_additions";
+type CountryEntry = { country: string; flag: string; lat: number; lng: number };
+
+function lsGet<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; } catch { return fallback; }
+}
+function lsSet(key: string, val: unknown) { localStorage.setItem(key, JSON.stringify(val)); }
+
+function loadCountryAdditions(): CountryEntry[] { return lsGet(COUNTRY_KEY, []); }
+function saveCountryAddition(c: CountryEntry) {
+  const all = loadCountryAdditions();
+  const idx = all.findIndex((x) => x.country === c.country);
+  if (idx >= 0) all[idx] = c; else all.push(c);
+  lsSet(COUNTRY_KEY, all);
+}
+function deleteCountryAddition(name: string) {
+  lsSet(COUNTRY_KEY, loadCountryAdditions().filter((c) => c.country !== name));
+}
+
+/* ── Compute alumni country counts from localStorage ── */
+function computeAlumniCounts(): Record<string, number> {
+  const overrides: Record<number, Partial<Alumni>> = lsGet("olula_alumni_overrides", {});
+  const additions: Record<number, Alumni[]> = lsGet("olula_alumni_additions", {});
+  const allAlumni: Alumni[] = [
+    ...alumni2024, ...alumni2025,
+    ...Object.values(additions).flat(),
+  ];
+  const merged = allAlumni.map((a) => overrides[a.id] ? { ...a, ...overrides[a.id] } : a);
+  const counts: Record<string, number> = {};
+  for (const a of merged) {
+    if (a.currentCountry?.trim()) {
+      counts[a.currentCountry] = (counts[a.currentCountry] || 0) + 1;
+    }
+  }
+  return counts;
+}
+
+/* ── Build full country list ── */
+function buildCountries(additions: CountryEntry[], alumniCounts: Record<string, number>) {
+  const base = countryData.map((c) => ({
+    ...c,
+    count: alumniCounts[c.country] ?? c.count,
+  }));
+  const baseNames = new Set(base.map((c) => c.country));
+  const extra = additions
+    .filter((a) => !baseNames.has(a.country))
+    .map((a) => ({ ...a, count: alumniCounts[a.country] ?? 0 }));
+  return [...base, ...extra];
+}
 
 function WorldMap({ countries, highlightedCountry }: { countries: typeof countryData; highlightedCountry: string | null }) {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
@@ -328,37 +381,44 @@ function QASection() {
   );
 }
 
-function AddCountryModal({ onClose, onAdd }: { onClose: () => void; onAdd: (country: string, flag: string) => void }) {
-  const [country, setCountry] = useState("");
-  const [flag, setFlag] = useState("");
+function AddCountryModal({ onClose, onSave }: { onClose: () => void; onSave: (c: CountryEntry) => void }) {
+  const [form, setForm] = useState({ country: "", flag: "", lat: "", lng: "" });
+  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const valid = form.country.trim() && form.flag.trim() && form.lat.trim() && form.lng.trim();
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative z-10 bg-white border border-[#E5E7EB] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-          <X className="w-5 h-5" />
-        </button>
-        <h3 className="text-[#0E172B] font-bold mb-4">Улс нэмэх</h3>
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+        <h3 className="text-[#0E172B] font-bold mb-1">Улс нэмэх</h3>
+        <p className="text-[#647588] text-xs mb-4">Газрын зурагт цэг харуулахын тулд уртраг/өргөрөг оруулна</p>
         <div className="space-y-3">
-          <input
-            type="text"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            placeholder="Улсын нэр (жишээ: Швед)"
-            className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-[#0E172B] placeholder-gray-400 text-sm focus:outline-none focus:border-[#32B4C5]"
-          />
-          <input
-            type="text"
-            value={flag}
-            onChange={(e) => setFlag(e.target.value)}
-            placeholder="Туг (жишээ: 🇸🇪)"
-            className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-[#0E172B] placeholder-gray-400 text-sm focus:outline-none focus:border-[#32B4C5]"
-          />
-          <button
-            onClick={() => { if (country && flag) { onAdd(country, flag); onClose(); } }}
-            className="w-full bg-[#32B4C5] hover:bg-[#5AC0A9] text-white font-semibold py-2.5 rounded-xl transition-all"
-          >
+          {[
+            { label: "Улсын нэр", key: "country", placeholder: "жишээ: Швед" },
+            { label: "Туг (emoji)", key: "flag", placeholder: "жишээ: 🇸🇪" },
+          ].map(({ label, key, placeholder }) => (
+            <div key={key}>
+              <label className="block text-xs text-[#647588] mb-1">{label}</label>
+              <input value={form[key as keyof typeof form]} onChange={(e) => set(key, e.target.value)} placeholder={placeholder}
+                className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-[#0E172B] placeholder-gray-400 text-sm focus:outline-none focus:border-[#32B4C5]" />
+            </div>
+          ))}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs text-[#647588] mb-1">Өргөрөг (lat)</label>
+              <input value={form.lat} onChange={(e) => set("lat", e.target.value)} placeholder="жишээ: 59.3"
+                type="number" className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2.5 text-[#0E172B] placeholder-gray-400 text-sm focus:outline-none focus:border-[#32B4C5]" />
+            </div>
+            <div>
+              <label className="block text-xs text-[#647588] mb-1">Уртраг (lng)</label>
+              <input value={form.lng} onChange={(e) => set("lng", e.target.value)} placeholder="жишээ: 18.1"
+                type="number" className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2.5 text-[#0E172B] placeholder-gray-400 text-sm focus:outline-none focus:border-[#32B4C5]" />
+            </div>
+          </div>
+          <button disabled={!valid}
+            onClick={() => { onSave({ country: form.country.trim(), flag: form.flag.trim(), lat: parseFloat(form.lat), lng: parseFloat(form.lng) }); onClose(); }}
+            className="w-full bg-[#32B4C5] hover:bg-[#5AC0A9] disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-2.5 rounded-xl transition-all">
             Нэмэх
           </button>
         </div>
@@ -368,12 +428,20 @@ function AddCountryModal({ onClose, onAdd }: { onClose: () => void; onAdd: (coun
 }
 
 export default function AchievementsPage() {
-  const { user, isAuthenticated } = useAuth();
-  const [countries, setCountries] = useState(countryData);
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
+  const [countryAdditions, setCountryAdditions] = useState<CountryEntry[]>([]);
+  const [alumniCounts, setAlumniCounts] = useState<Record<string, number>>({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [highlightedCountry, setHighlightedCountry] = useState<string | null>(null);
 
-  const canAddPin = isAuthenticated && (user?.role === "alumni" || user?.role === "teacher");
+  useEffect(() => {
+    setCountryAdditions(loadCountryAdditions());
+    setAlumniCounts(computeAlumniCounts());
+  }, []);
+
+  const countries = buildCountries(countryAdditions, alumniCounts);
   const totalAbroad = countries.filter((c) => c.country !== "Монгол").reduce((s, c) => s + c.count, 0);
 
   const handleCardClick = (countryName: string) => {
@@ -381,13 +449,15 @@ export default function AchievementsPage() {
     setTimeout(() => setHighlightedCountry(null), 2500);
   };
 
-  const addCountry = (countryName: string, flag: string) => {
-    const existing = countries.find((c) => c.country === countryName);
-    if (existing) {
-      setCountries((prev) => prev.map((c) => c.country === countryName ? { ...c, count: c.count + 1 } : c));
-    } else {
-      setCountries((prev) => [...prev, { country: countryName, count: 1, lat: 50, lng: 10, flag }]);
-    }
+  const handleSaveCountry = (c: CountryEntry) => {
+    saveCountryAddition(c);
+    setCountryAdditions(loadCountryAdditions());
+  };
+
+  const handleDeleteCountry = (name: string) => {
+    deleteCountryAddition(name);
+    setCountryAdditions(loadCountryAdditions());
+    if (highlightedCountry === name) setHighlightedCountry(null);
   };
 
   return (
@@ -431,7 +501,7 @@ export default function AchievementsPage() {
               <Globe className="w-5 h-5 text-[#32B4C5]" />
               Дэлхийн газрын зураг
             </h2>
-            {canAddPin && (
+            {isAdmin && (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="flex items-center gap-2 bg-[#32B4C5]/10 hover:bg-[#32B4C5]/20 border border-[#32B4C5]/30 text-[#32B4C5] text-sm px-4 py-2 rounded-xl transition-all"
@@ -448,24 +518,35 @@ export default function AchievementsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8">
           {countries.map((c) => {
             const isActive = highlightedCountry === c.country;
+            const isAddition = countryAdditions.some((a) => a.country === c.country);
             return (
-              <button
-                key={c.country}
-                onClick={() => handleCardClick(c.country)}
-                className={`rounded-xl p-4 text-center transition-all group border ${
-                  isActive
-                    ? "bg-[#1C274C] border-[#32B4C5] shadow-lg shadow-[#32B4C5]/20 scale-105"
-                    : "bg-white border-[#E5E7EB] hover:border-[#32B4C5]/40 hover:shadow-sm"
-                }`}
-              >
-                <div className="text-3xl mb-2">{c.flag}</div>
-                <div className={`font-semibold text-sm ${isActive ? "text-white" : "text-[#0E172B]"}`}>{c.country}</div>
-                <div className="flex items-center justify-center gap-1 mt-1">
-                  <MapPin className={`w-3 h-3 ${isActive ? "text-[#5AC0A9]" : "text-[#32B4C5]"}`} />
-                  <span className={`text-sm font-bold ${isActive ? "text-[#5AC0A9]" : "text-[#32B4C5]"}`}>{c.count}</span>
-                  <span className={`text-xs ${isActive ? "text-gray-300" : "text-gray-400"}`}>оюутан</span>
-                </div>
-              </button>
+              <div key={c.country} className="relative group/card">
+                <button
+                  onClick={() => handleCardClick(c.country)}
+                  className={`w-full rounded-xl p-4 text-center transition-all border ${
+                    isActive
+                      ? "bg-[#1C274C] border-[#32B4C5] shadow-lg shadow-[#32B4C5]/20 scale-105"
+                      : "bg-white border-[#E5E7EB] hover:border-[#32B4C5]/40 hover:shadow-sm"
+                  }`}
+                >
+                  <div className="text-3xl mb-2">{c.flag}</div>
+                  <div className={`font-semibold text-sm ${isActive ? "text-white" : "text-[#0E172B]"}`}>{c.country}</div>
+                  <div className="flex items-center justify-center gap-1 mt-1">
+                    <MapPin className={`w-3 h-3 ${isActive ? "text-[#5AC0A9]" : "text-[#32B4C5]"}`} />
+                    <span className={`text-sm font-bold ${isActive ? "text-[#5AC0A9]" : "text-[#32B4C5]"}`}>{c.count}</span>
+                    <span className={`text-xs ${isActive ? "text-gray-300" : "text-gray-400"}`}>оюутан</span>
+                  </div>
+                </button>
+                {isAdmin && isAddition && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteCountry(c.country); }}
+                    className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity hover:bg-red-700 z-10"
+                    title="Улс устгах"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
@@ -475,7 +556,7 @@ export default function AchievementsPage() {
       </div>
 
       {showAddModal && (
-        <AddCountryModal onClose={() => setShowAddModal(false)} onAdd={addCountry} />
+        <AddCountryModal onClose={() => setShowAddModal(false)} onSave={handleSaveCountry} />
       )}
     </main>
   );
